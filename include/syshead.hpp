@@ -16,6 +16,7 @@
 #include <sys/capability.h>
 
 // cpp equivalent of c headers
+#include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>

@@ -76,13 +76,15 @@ inline void print_err(std::format_string<Args...> fmt, Args &&...args)
 
 /**
  * Calculates the sum of every 16 bits in a buffer.
+ * @param buff The input buffer as a span of bytes.
  */
-uint32_t sum_every_16_bits(const std::vector<uint8_t> &buff);
+uint32_t sum_every_16_bits(std::span<const uint8_t> buff);
 
 /**
  * Calculates the official RFC 1071 "Internet Checksum" for a given buffer.
+ * @param buff The input buffer as a span of bytes.
  */
-uint16_t checksum(const std::vector<uint8_t> &buff, int start_sum = 0);
+uint16_t checksum(std::span<const uint8_t> buff, uint32_t start_sum = 0);
 
 /**
  * get_address: Resolves a hostname and port into a sockaddr structure.

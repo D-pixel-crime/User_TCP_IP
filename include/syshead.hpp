@@ -18,6 +18,7 @@
 // cpp equivalent of c headers
 #include <cstdint>
 #include <cstdlib>
+#include <cstddef>
 #include <iostream>
 #include <string>
 #include <format>

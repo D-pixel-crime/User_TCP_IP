@@ -72,6 +72,6 @@ uint32_t parse_ipv4_string(std::string_view addr)
 {
     struct sockaddr_in sa{};
 
-    inet_pton(AF_INET, addr.data(), &(sa.sin_addr));
+    inet_pton(AF_INET, std::string(addr).c_str(), &(sa.sin_addr));
     return sa.sin_addr.s_addr;
 }

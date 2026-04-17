@@ -57,7 +57,7 @@ int run_cmd(std::string_view fmt, Args &&...args)
 }
 
 /**
- * Executes a shell command with dynamic formatting.
+ * Prints a formatted debug message with source location information.
  * * @tparam 'Args' Variadic template parameter pack to handle any number/type of arguments.
  * @param fmt 'std::format_string' checks at COMPILE-TIME that the format string is valid for the provided arguments.
  */

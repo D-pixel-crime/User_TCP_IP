@@ -66,31 +66,52 @@ public:
         return list_entry<T>(head.next, offset);
     }
 
-    inline void queue_add(list_head *newListHead)
+    inline void queue_add(list_head *_newListHead)
     {
-        (head.next)->prev = newListHead;
-        newListHead->prev = &head;
-        newListHead->next = (head.next);
-        (head.next) = newListHead;
+        (head.next)->prev = _newListHead;
+        _newListHead->prev = &head;
+        _newListHead->next = (head.next);
+        (head.next) = _newListHead;
         len++;
     }
 
-    inline void queue_add_tail(list_head *newListTail)
+    inline void queue_add_tail(list_head *_newListTail)
     {
-        (head.prev)->next = newListTail;
-        newListTail->next = &head;
-        newListTail->prev = (head.prev);
-        (head.prev) = newListTail;
+        (head.prev)->next = _newListTail;
+        _newListTail->next = &head;
+        _newListTail->prev = (head.prev);
+        (head.prev) = _newListTail;
         len++;
     }
 
-    inline void queue_del(list_head *toDel)
+    inline void queue_del(list_head *_toDel)
     {
-        auto prev = toDel->prev;
-        auto nxt = toDel->next;
+        auto prev = _toDel->prev;
+        auto nxt = _toDel->next;
 
         prev->next = nxt;
         nxt->prev = prev;
+        _toDel->prev = _toDel->next = nullptr;
         len--;
+    }
+
+    inline T *dequeue()
+    {
+        T *toRet = queue_first_entry();
+        if (toRet)
+        {
+            queue_del(head.next);
+        }
+
+        return toRet;
+    }
+
+    template <typename CLEANER>
+    inline void clear_queue(CLEANER &&cleaner)
+    {
+        while (T *entry = dequeue())
+        {
+            cleaner(T);
+        }
     }
 };

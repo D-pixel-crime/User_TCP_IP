@@ -75,3 +75,18 @@ uint32_t parse_ipv4_string(std::string_view addr)
     inet_pton(AF_INET, std::string(addr).c_str(), &(sa.sin_addr));
     return sa.sin_addr.s_addr;
 }
+
+std::array<uint8_t, 6> parse_MAC_string(std::string_view mac_addr)
+{
+    std::array<uint8_t, 6> ans;
+    int i = 0, n = mac_addr.size(), k = 0;
+    while (i < n)
+    {
+        uint8_t curr = static_cast<uint8_t>(stoi(std::string(mac_addr.substr(i, 2)), nullptr, 16));
+        ans[k] = curr;
+        k++;
+        i += 3;
+    }
+
+    return ans;
+}

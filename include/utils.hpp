@@ -99,3 +99,9 @@ int get_address(std::string_view host, std::string_view port, struct sockaddr *a
  * @param addr The IPv4 address string to parse.
  */
 uint32_t parse_ipv4_string(std::string_view addr);
+
+/**
+ * Parses a MAC address string (e.g., "00:00:01:02:03:05") into a 32-bit integer.
+ * @param mac_addr The MAC address string to parse.
+ */
+std::array<uint8_t, 6> parse_MAC_string(std::string_view mac_addr);

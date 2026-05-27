@@ -19,7 +19,10 @@ static inline void list_for_each(list_head *head, FUNC &&f)
 {
     for (list_head *pos = head->next; pos != head; pos = pos->next)
     {
-        f(pos);
+        if (f(pos))
+        {
+            break;
+        }
     }
 }
 
@@ -28,7 +31,10 @@ static inline void list_for_each_safe(list_head *head, FUNC &&f)
 {
     for (list_head *pos = head->next, *p = pos->next; pos != head; pos = p, p = pos->next)
     {
-        f(pos);
+        if (f(pos))
+        {
+            break;
+        }
     }
 }
 

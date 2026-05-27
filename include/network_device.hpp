@@ -23,20 +23,7 @@ public:
     std::array<uint8_t, 6> hwaddr; // MAC Address
     uint32_t mtu;
 
-    NetworkDevice(std::string_view _addr, std::string_view _hwaddr, uint32_t _mtu) : mtu(_mtu)
-    {
-        addr = parse_ipv4_string(_addr);
-        addr_len = sizeof(addr);
-
-        int i = 0, n = _hwaddr.size(), k = 0;
-        while (i < n)
-        {
-            uint8_t curr = static_cast<uint8_t>(stoi(std::string(_hwaddr.substr(i, 2)), nullptr, 16));
-            hwaddr[k] = curr;
-            k++;
-            i += 3;
-        }
-    }
+    NetworkDevice(std::string_view _addr, std::string_view _hwaddr, uint32_t _mtu);
 };
 
 NetworkDevice *loopback;

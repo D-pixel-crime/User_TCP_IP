@@ -1,7 +1,5 @@
 #include "socket_buffer.hpp"
 
-IntrusiveQueue<SkBuff> sk_buff_queue(SkBuff::getOffset__list_node());
-
 SkBuff::SkBuff(size_t _size) : data(new uint8_t[_size]), refcnt(0)
 {
     head = data;
@@ -37,3 +35,5 @@ inline void SkBuff::reset_header()
     data = end - data_len;
     len = data_len;
 }
+
+IntrusiveQueue<SkBuff> sk_buff_queue(SkBuff::getOffset__list_node());

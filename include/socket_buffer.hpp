@@ -11,7 +11,10 @@ class SkBuff
 private:
     list_head list_node;
     NetworkDevice *dev;
-    /* I think its better to use 'SkBuff*' using 'shared_ptr', then no need to keep this in check. */
+    /*
+       Rather than counting 'refcnt',
+       I think its better to use 'SkBuff*' using 'shared_ptr', then no need to keep this in check.
+    */
     std::atomic<int> refcnt;
     /****************************************************/
     uint16_t protocol;
@@ -25,12 +28,12 @@ private:
     uint8_t *payload;
 
 public:
+    SkBuff(size_t _size);
+
     static inline size_t getOffset__list_node()
     {
         return offsetof(SkBuff, SkBuff::list_node);
     }
-
-    SkBuff(size_t _size);
 
     inline uint8_t *get_head();
 

@@ -22,22 +22,22 @@ private:
 public:
     RtEntry(uint32_t _dest, uint32_t _gateway, uint32_t _netmask, uint32_t _metric, uint8_t _flags, NetworkDevice *_dev);
 
-    static inline size_t getOffset__list_node()
+    static size_t getOffset__list_node()
     {
         return offsetof(RtEntry, RtEntry::list_node);
     }
 
-    inline list_head *getAddr__list_node()
+    list_head *getAddr__list_node()
     {
         return &list_node;
     }
 
-    inline uint32_t getNetmask()
+    uint32_t getNetmask()
     {
         return netmask;
     }
 
-    inline uint32_t getDest()
+    uint32_t getDest()
     {
         return dest;
     }

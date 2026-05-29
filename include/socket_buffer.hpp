@@ -1,6 +1,7 @@
 #pragma once
 #include "network_device.hpp"
 #include "intrusive_queue.hpp"
+#include "route.hpp"
 #include <thread>
 #include <atomic>
 #include <cstdint>
@@ -10,6 +11,7 @@ class SkBuff
 {
 private:
     list_head list_node;
+    RtEntry *rt;
     NetworkDevice *dev;
     /*
        Rather than counting 'refcnt',
@@ -45,3 +47,16 @@ public:
 
     ~SkBuff();
 };
+
+/* To be implemented
+static inline void skb_queue_free(struct sk_buff_head *list)
+{
+    struct sk_buff *skb = NULL;
+
+    while ((skb = skb_peek(list)) != NULL) {
+        skb_dequeue(list);
+        skb->refcnt--;
+        free_skb(skb);
+    }
+}
+*/

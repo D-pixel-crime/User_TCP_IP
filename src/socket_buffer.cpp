@@ -8,10 +8,7 @@ SkBuff::SkBuff(size_t _size) : data(new uint8_t[_size]), refcnt(0)
 
 SkBuff::~SkBuff()
 {
-    delete head;
     delete data;
-    delete end;
-    delete payload;
 }
 
 inline uint8_t *SkBuff::get_head()

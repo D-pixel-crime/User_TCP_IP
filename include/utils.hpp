@@ -8,12 +8,24 @@
 #include <format>
 #include <algorithm>
 #include <span>
-#include <vector>
 #include <cstdint>
 #include <string_view>
 #include <source_location>
 
-constexpr int CMD_BUF_LEN = 100;
+inline constexpr int CMD_BUF_LEN = 100;
+
+/**
+ * Macro to clear a structure by setting all its bytes to zero.
+ * * @param 'T' The structure variable to be cleared.
+ */
+template <typename T>
+void CLEAR(T *obj)
+{
+    if (obj)
+    {
+        memset(obj, 0, sizeof(T));
+    }
+}
 
 /**
  * Executes a shell command with dynamic formatting.
@@ -23,7 +35,7 @@ constexpr int CMD_BUF_LEN = 100;
  * @param args The data to be injected into the {} placeholders.
  */
 template <typename... Args>
-// 'Args&&': universal refernce(T&&), can bind both lvalue, rvalue references.
+// 'Args&&': universal reference(T&&), can bind both lvalue, rvalue references.
 int run_cmd(std::string_view fmt, Args &&...args)
 {
     try
@@ -62,9 +74,8 @@ int run_cmd(std::string_view fmt, Args &&...args)
  * @param fmt 'std::format_string' checks at COMPILE-TIME that the format string is valid for the provided arguments.
  */
 template <typename... Args>
-inline void print_debug(std::format_string<Args...> fmt, Args &&...args)
+inline void print_debug(std::format_string<Args...> fmt, Args &&...args, const std::source_location loc = std::source_location::current())
 {
-    const std::source_location loc = std::source_location::current();
     std::cout << std::format(fmt, std::forward<Args>(args)...) << std::format(" - {}:{}\n", loc.file_name(), loc.line()) << std::endl;
 }
 

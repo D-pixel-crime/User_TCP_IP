@@ -53,17 +53,17 @@ public:
         head.prev = &head;
     };
 
-    inline bool isEmpty() const
+    bool isEmpty() const
     {
         return &head == head.next;
     }
 
-    inline int size() const
+    int size() const
     {
         return len;
     }
 
-    inline T *queue_first_entry() const
+    T *queue_first_entry() const
     {
         if (isEmpty())
         {
@@ -72,7 +72,7 @@ public:
         return list_entry<T>(head.next, offset);
     }
 
-    inline void queue_add(list_head *_newListHead)
+    void queue_add(list_head *_newListHead)
     {
         (head.next)->prev = _newListHead;
         _newListHead->prev = &head;
@@ -81,7 +81,7 @@ public:
         len++;
     }
 
-    inline void queue_add_tail(list_head *_newListTail)
+    void queue_add_tail(list_head *_newListTail)
     {
         (head.prev)->next = _newListTail;
         _newListTail->next = &head;
@@ -90,7 +90,7 @@ public:
         len++;
     }
 
-    inline void queue_del(list_head *_toDel)
+    void queue_del(list_head *_toDel)
     {
         auto prev = _toDel->prev;
         auto nxt = _toDel->next;
@@ -101,7 +101,7 @@ public:
         len--;
     }
 
-    inline T *dequeue()
+    T *dequeue()
     {
         T *toRet = queue_first_entry();
         if (toRet)
@@ -113,7 +113,7 @@ public:
     }
 
     template <typename CLEANER>
-    inline void clear_queue(CLEANER &&cleaner)
+    void clear_queue(CLEANER &&cleaner)
     {
         while (T *entry = dequeue())
         {

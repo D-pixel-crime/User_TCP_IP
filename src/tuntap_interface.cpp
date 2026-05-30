@@ -63,7 +63,7 @@ TUNTAP_Interface::TUNTAP_Interface()
         initialised = true;
         dev = std::string(IFNAMSIZ, '\0');
 
-        tun_fd = tap_alloc();
+        tap_fd = tap_alloc();
 
         if (set_interface_up(dev))
         {
@@ -96,7 +96,7 @@ void free_tuntap_interface()
 {
     if (TUNTAP_Interface::initialised)
     {
-        close(TUNTAP_Interface::tun_fd);
+        close(TUNTAP_Interface::tap_fd);
         TUNTAP_Interface::initialised = false;
     }
 
@@ -105,4 +105,26 @@ void free_tuntap_interface()
         delete tuntap_interface;
         tuntap_interface = nullptr;
     }
+}
+
+int tuntap_read(uint8_t *buffer, size_t len)
+{
+    if (!TUNTAP_Interface::initialised)
+    {
+        print_err("TUN/TAP Interface not yet initialised!");
+        std::exit(EXIT_FAILURE);
+    }
+
+    read(TUNTAP_Interface::tap_fd, buffer, len);
+}
+
+int tuntap_write(uint8_t *buffer, size_t len)
+{
+    if (!TUNTAP_Interface::initialised)
+    {
+        print_err("TUN/TAP Interface not yet initialised!");
+        std::exit(EXIT_FAILURE);
+    }
+
+    write(TUNTAP_Interface::tap_fd, buffer, len);
 }

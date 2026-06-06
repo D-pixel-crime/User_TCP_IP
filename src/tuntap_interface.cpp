@@ -1,6 +1,6 @@
-#include "tuntap_interface.hpp"
-#include "syshead.hpp"
-#include "utils.hpp"
+#include "../include/tuntap_interface.hpp"
+#include "../include/syshead.hpp"
+#include "../include/utils.hpp"
 
 /**
  * Brings network-interface online by @param dev

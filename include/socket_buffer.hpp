@@ -9,7 +9,7 @@
 
 class SkBuff
 {
-private:
+public:
     list_head list_node;
     RtEntry *rt;
     NetworkDevice *dev;
@@ -29,7 +29,6 @@ private:
     uint8_t *end;
     uint8_t *payload;
 
-public:
     SkBuff(size_t _size);
 
     static inline size_t getOffset__list_node()
@@ -37,16 +36,24 @@ public:
         return offsetof(SkBuff, SkBuff::list_node);
     }
 
-    inline uint8_t *get_head();
+    void reserve_headroom(size_t _headroomLen);
 
-    inline void reserve_headroom(size_t _headroomLen);
+    uint8_t *push(size_t _dataLenToAdd);
 
-    inline void push(size_t _dataLenToAdd);
-
-    inline void reset_header();
+    void reset_header();
 
     ~SkBuff();
 };
+
+void free_skb(SkBuff *skb)
+{
+    if (skb->refcnt <= 1)
+    {
+        delete skb;
+        return;
+    }
+    skb->refcnt--;
+}
 
 /* To be implemented
 static inline void skb_queue_free(struct sk_buff_head *list)

@@ -16,19 +16,13 @@ inline void netdev_debug(std::format_string<Args...> fmt, Args &&...args, const 
 
 class NetworkDevice
 {
-private:
+public:
     uint32_t addr;
     uint8_t addr_len;
-    std::array<uint8_t, 6> hwaddr; // MAC Address
+    uint8_t hwaddr[6]; // MAC Address
     uint32_t mtu;
 
-public:
     NetworkDevice(std::string_view _addr, std::string_view _hwaddr, uint32_t _mtu);
-
-    uint32_t getAddr()
-    {
-        return addr;
-    }
 };
 
 inline NetworkDevice *loopback = nullptr;

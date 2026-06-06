@@ -1,5 +1,5 @@
-#include "utils.hpp"
-#include "syshead.hpp"
+#include "../include/utils.hpp"
+#include "../include/syshead.hpp"
 
 extern int debug;
 
@@ -76,9 +76,9 @@ uint32_t parse_ipv4_string(std::string_view addr)
     return sa.sin_addr.s_addr;
 }
 
-std::array<uint8_t, 6> parse_MAC_string(std::string_view mac_addr)
+uint8_t *parse_MAC_string(std::string_view mac_addr)
 {
-    std::array<uint8_t, 6> ans;
+    uint8_t ans[6];
     int i = 0, n = mac_addr.size(), k = 0;
     while (i < n)
     {

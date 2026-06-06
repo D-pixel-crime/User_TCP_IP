@@ -4,8 +4,8 @@
 
 struct list_head
 {
-    list_head *prev;
-    list_head *next;
+    list_head *prev{this};
+    list_head *next{this};
 };
 
 template <typename T>
@@ -52,6 +52,11 @@ public:
         head.next = &head;
         head.prev = &head;
     };
+
+    list_head *get_queue_list_head()
+    {
+        return &head;
+    }
 
     bool isEmpty() const
     {
@@ -117,7 +122,7 @@ public:
     {
         while (T *entry = dequeue())
         {
-            cleaner(T);
+            cleaner(entry);
         }
     }
 };

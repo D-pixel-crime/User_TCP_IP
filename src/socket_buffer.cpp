@@ -1,19 +1,18 @@
-#include "socket_buffer.hpp"
+#include "../include/socket_buffer.hpp"
 
-SkBuff::SkBuff(size_t _size) : data(new uint8_t[_size]), refcnt(0)
+IntrusiveQueue<SkBuff> sk_buff_queue(SkBuff::getOffset__list_node());
+
+SkBuff::SkBuff(size_t _size)
+    : data(new uint8_t[_size]()), refcnt(0), len(0), data_len(0), protocol(0), seq(0), end_seq(0)
 {
     head = data;
     end = data + _size;
+    payload = nullptr;
 }
 
 SkBuff::~SkBuff()
 {
-    delete data;
-}
-
-inline uint8_t *SkBuff::get_head()
-{
-    return head;
+    delete[] data;
 }
 
 inline void SkBuff::reserve_headroom(size_t _headroomLen)
@@ -21,10 +20,12 @@ inline void SkBuff::reserve_headroom(size_t _headroomLen)
     data += _headroomLen;
 }
 
-inline void SkBuff::push(size_t _dataLenToAdd)
+inline uint8_t *SkBuff::push(size_t _dataLenToAdd)
 {
     data -= _dataLenToAdd;
     len += _dataLenToAdd;
+
+    return this->data;
 }
 
 inline void SkBuff::reset_header()
@@ -32,5 +33,3 @@ inline void SkBuff::reset_header()
     data = end - data_len;
     len = data_len;
 }
-
-IntrusiveQueue<SkBuff> sk_buff_queue(SkBuff::getOffset__list_node());

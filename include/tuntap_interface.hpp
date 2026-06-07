@@ -4,11 +4,11 @@
 class TUNTAP_Interface
 {
 public:
+    inline static std::string tap_addr = "10.0.0.5";
+    inline static std::string tap_route = "10.0.0.0/24";
     static bool initialised;
     static int tap_fd;
     static std::string dev;
-    std::string tap_addr = "10.0.0.5";
-    std::string tap_route = "10.0.0.0/24";
 
     TUNTAP_Interface();
 

@@ -1,9 +1,10 @@
 #pragma once
 #include "syshead.hpp"
 #include "utils.hpp"
+#include "socket_buffer.hpp"
 
-constexpr size_t BUFFLEN = 1600;
-constexpr size_t MAX_ADDR_LEN = 32;
+inline constexpr size_t BUFFLEN = 1600;
+inline constexpr size_t MAX_ADDR_LEN = 32;
 
 /**
  * Prints a formatted debug message specific to network devices with source location information.
@@ -18,7 +19,7 @@ class NetworkDevice
 {
 public:
     uint32_t addr;
-    uint8_t addr_len;
+    size_t addr_len;
     uint8_t hwaddr[6]; // MAC Address
     uint32_t mtu;
 
@@ -30,9 +31,12 @@ inline NetworkDevice *netdev = nullptr;
 
 void network_device_init();
 
-/* To be implemented
-int netdev_transmit(struct sk_buff *skb, uint8_t *dst, uint16_t ethertype);
+int netdev_transmit(SkBuff *skb, uint8_t *dst_hw, const uint16_t &ethertype);
+
+int netdev_receive(SkBuff *skb);
+
 void *netdev_rx_loop();
+
+NetworkDevice *netdev_get(const uint32_t &sip);
+
 void free_netdev();
-struct netdev *netdev_get(uint32_t sip);
-*/

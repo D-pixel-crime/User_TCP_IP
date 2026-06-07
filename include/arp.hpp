@@ -6,12 +6,12 @@
 #include "socket_buffer.hpp"
 #include "intrusive_queue.hpp"
 
-inline constexpr int ARP_ETHERNET = 0x0001;
-inline constexpr int ARP_IPV4 = 0x0800;
-inline constexpr int ARP_REPLY = 0x0001;
-inline constexpr int ARP_REQUEST = 0x0002;
+inline constexpr auto ARP_ETHERNET = 0x0001;
+inline constexpr auto ARP_IPV4 = 0x0800;
+inline constexpr auto ARP_REPLY = 0x0001;
+inline constexpr auto ARP_REQUEST = 0x0002;
 
-inline constexpr int ARP_CACHE_LEN = 32;
+inline constexpr size_t ARP_CACHE_LEN = 32;
 inline constexpr int ARP_FREE = 0;
 inline constexpr int ARP_WAITING = 1;
 inline constexpr int ARP_RESOLVED = 2;
@@ -45,7 +45,7 @@ inline void arpdata_debug(std::string_view str, const Arp_Ipv4 *data, const std:
               << std::flush;
 }
 
-inline void arpcache_dbg(std::string_view str, const Arp_Cache_Entry *entry, const std::source_location loc = std::source_location::current())
+inline void arpcache_debug(std::string_view str, const Arp_Cache_Entry *entry, const std::source_location loc = std::source_location::current())
 {
     std::cout << std::format("arp cache {} (hwtype: {}, sip: {}.{}.{}.{}, "
                              "smac: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}, state: {}) - {}:{}\n",
@@ -64,7 +64,7 @@ class __attribute__((packed)) Arp_Hdr
 public:
     uint16_t hwtype;
     uint16_t protype;
-    uint8_t hwsize;
+    size_t hwsize;
     uint8_t prosize;
     uint16_t opcode;
     uint8_t data[0];
@@ -100,7 +100,7 @@ public:
     uint8_t smac[6];
     uint32_t state;
 
-    Arp_Cache_Entry(uint16_t _hwtype, uint32_t _sip, const uint8_t *_smac, uint32_t _state) : hwtype{_hwtype}, sip{_sip}, state{_state}
+    Arp_Cache_Entry(const uint16_t &_hwtype, const uint32_t &_sip, const uint8_t *_smac, const uint32_t &_state) : hwtype{_hwtype}, sip{_sip}, state{_state}
     {
         std::memcpy(smac, _smac, 6);
     }
@@ -117,17 +117,13 @@ inline Arp_Hdr *arp_hdr(SkBuff *skb)
 }
 
 /* To be implemented
-void arp_init();
 void free_arp();
-void arp_reply(struct sk_buff *skb, struct netdev *netdev);
-unsigned char* arp_get_hwaddr(uint32_t sip);
-
-static inline struct arp_hdr *arp_hdr(struct sk_buff *skb)
-{
-    return (struct arp_hdr *)(skb->head + ETH_HDR_LEN);
-    }
-    */
+*/
 
 void arp_rcv(SkBuff *skb);
 
-int arp_request(uint32_t sip, uint32_t dip, NetworkDevice *netdev);
+int arp_request(const uint32_t &sip, const uint32_t &dip, NetworkDevice *netdev);
+
+void arp_reply(SkBuff *skb, NetworkDevice *netdev);
+
+uint8_t *arp_get_hwaddr(const uint32_t &sip);

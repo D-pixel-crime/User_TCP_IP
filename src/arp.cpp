@@ -1,6 +1,6 @@
-#include "../include/arp.hpp"
-#include "../include/network_device.hpp"
 #include "../include/socket_buffer.hpp"
+#include "../include/network_device.hpp"
+#include "../include/arp.hpp"
 #include "../include/intrusive_queue.hpp"
 #include <mutex>
 
@@ -8,10 +8,6 @@ std::mutex arp_cache_mutex;
 
 uint8_t broadcast_hw[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 IntrusiveQueue<Arp_Cache_Entry> arp_cache_entry_queue(Arp_Cache_Entry::getOffset__list_node());
-
-/*To be implemented
-static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-*/
 
 SkBuff *arp_alloc_skb()
 {
@@ -50,7 +46,7 @@ int update_arp_translation_table(Arp_Hdr *hdr, Arp_Ipv4 *data)
     return found;
 }
 
-void arp_rcv(SkBuff *skb)
+void arp_receive(SkBuff *skb)
 {
     Arp_Ipv4 *arpdata;
     NetworkDevice *netdev;
@@ -83,12 +79,12 @@ void arp_rcv(SkBuff *skb)
 
     merge = update_arp_translation_table(arphdr, arpdata);
 
-    /* To be implemented
-    if (!(netdev = netdev_get(arpdata->dip))) {
-        printf("ARP was not for us\n");
-        goto drop_pkt;
+    if (!(netdev = netdev_get(arpdata->dip)))
+    {
+        std::cout << "ARP was not for us\n";
+        free_skb(skb);
+        return;
     }
-    */
 
     if (!merge && !insert_arp_translation_table(arphdr, arpdata))
     {
@@ -100,9 +96,7 @@ void arp_rcv(SkBuff *skb)
     switch (arphdr->opcode)
     {
     case ARP_REQUEST:
-        /* To be implemented:
-            arp_reply(skb, netdev);
-        */
+        arp_reply(skb, netdev);
         return;
 
     default:
@@ -112,7 +106,7 @@ void arp_rcv(SkBuff *skb)
     }
 }
 
-int arp_request(uint32_t sip, uint32_t dip, NetworkDevice *netdev)
+int arp_request(const uint32_t &sip, const uint32_t &dip, NetworkDevice *netdev)
 {
     Arp_Hdr *arphdr;
     Arp_Ipv4 *arpdata;
@@ -128,10 +122,10 @@ int arp_request(uint32_t sip, uint32_t dip, NetworkDevice *netdev)
 
     arpdata = reinterpret_cast<Arp_Ipv4 *>(skb->push(Arp_Ipv4::getSize()));
 
-    std::memcpy(arpdata->smac, netdev->hwaddr, netdev->addr_len);
+    std::memcpy(arpdata->smac, netdev->hwaddr, sizeof(netdev->hwaddr));
     arpdata->sip = sip;
 
-    std::memcpy(arpdata->dmac, broadcast_hw, netdev->addr_len);
+    std::memcpy(arpdata->dmac, broadcast_hw, sizeof(netdev->hwaddr));
     arpdata->dip = dip;
 
     arphdr = reinterpret_cast<Arp_Hdr *>(skb->push(Arp_Hdr::getSize()));
@@ -140,17 +134,83 @@ int arp_request(uint32_t sip, uint32_t dip, NetworkDevice *netdev)
     arphdr->opcode = htons(ARP_REQUEST);
     arphdr->hwtype = htons(ARP_ETHERNET);
     arphdr->protype = htons(ETH_P_IP);
-    arphdr->hwsize = netdev->addr_len;
+    arphdr->hwsize = sizeof(netdev->hwaddr);
     arphdr->prosize = 4;
 
     arpdata_debug("Request", arpdata);
     arpdata->sip = htons(arpdata->sip);
     arpdata->dip = htons(arpdata->dip);
 
-    /* To be implemented
     rc = netdev_transmit(skb, broadcast_hw, ETH_P_ARP);
-    */
 
     free_skb(skb);
     return rc;
 }
+
+void arp_reply(SkBuff *skb, NetworkDevice *netdev)
+{
+    Arp_Ipv4 *arpdata;
+    Arp_Hdr *arphdr = arp_hdr(skb);
+
+    skb->reserve_headroom(Eth_Hdr::getSize() + Arp_Hdr::getSize() + Arp_Ipv4::getSize());
+    skb->push(Arp_Hdr::getSize() + Arp_Ipv4::getSize());
+
+    arpdata = reinterpret_cast<Arp_Ipv4 *>(arphdr->data);
+
+    std::memcpy(arpdata->dmac, arpdata->smac, 6);
+    arpdata->dip = arpdata->sip;
+
+    std::memcpy(arpdata->smac, netdev->hwaddr, 6);
+    arpdata->sip = netdev->addr;
+
+    arphdr->opcode = ARP_REPLY;
+
+    arp_debug("Reply", arphdr);
+    arphdr->opcode = htons(arphdr->opcode);
+    arphdr->hwtype = htons(arphdr->hwtype);
+    arphdr->protype = htons(arphdr->protype);
+
+    arpdata_debug("Reply", arpdata);
+    arpdata->sip = htonl(arpdata->sip);
+    arpdata->dip = htonl(arpdata->dip);
+
+    skb->dev = netdev;
+
+    netdev_transmit(skb, arpdata->dmac, ETH_P_ARP);
+
+    free_skb(skb);
+}
+
+uint8_t *arp_get_hwaddr(const uint32_t &sip)
+{
+    uint8_t *hwaddr = nullptr;
+
+    std::lock_guard<std::mutex> lock(arp_cache_mutex);
+
+    list_for_each(arp_cache_entry_queue.get_queue_list_head(), [&](list_head *pos)
+                  {
+        Arp_Cache_Entry* arp_entry = list_entry<Arp_Cache_Entry>(pos, Arp_Cache_Entry::getOffset__list_node());
+        if(arp_entry->state == ARP_RESOLVED && arp_entry->sip == sip){
+            arpcache_debug("Entry", arp_entry);
+
+            std::memcpy(hwaddr, arp_entry->smac, 6);
+            return;
+        } });
+
+    return hwaddr;
+}
+
+/*To be implemented
+void free_arp()
+{
+    struct list_head *item, *tmp;
+    struct arp_cache_entry *entry;
+
+    list_for_each_safe(item, tmp, &arp_cache) {
+        entry = list_entry(item, struct arp_cache_entry, list);
+        list_del(item);
+
+        free(entry);
+    }
+}
+*/

@@ -10,7 +10,7 @@ constexpr uint8_t RT_UP = 0x10;
 
 class RtEntry
 {
-private:
+public:
     list_head list_node;
     NetworkDevice *dev;
     uint32_t dest;
@@ -19,27 +19,11 @@ private:
     uint32_t metric;
     uint8_t flags;
 
-public:
     RtEntry(uint32_t _dest, uint32_t _gateway, uint32_t _netmask, uint32_t _metric, uint8_t _flags, NetworkDevice *_dev);
 
     static size_t getOffset__list_node()
     {
         return offsetof(RtEntry, RtEntry::list_node);
-    }
-
-    list_head *getAddr__list_node()
-    {
-        return &list_node;
-    }
-
-    uint32_t getNetmask()
-    {
-        return netmask;
-    }
-
-    uint32_t getDest()
-    {
-        return dest;
     }
 };
 

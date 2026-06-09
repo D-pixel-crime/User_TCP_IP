@@ -49,7 +49,7 @@ int update_arp_translation_table(Arp_Hdr *hdr, Arp_Ipv4 *data)
 void arp_receive(SkBuff *skb)
 {
     Arp_Ipv4 *arpdata;
-    NetworkDevice *netdev;
+    Network_Device *netdev;
     int merge = 0;
 
     Arp_Hdr *arphdr = arp_hdr(skb);
@@ -106,7 +106,7 @@ void arp_receive(SkBuff *skb)
     }
 }
 
-int arp_request(const uint32_t &sip, const uint32_t &dip, NetworkDevice *netdev)
+int arp_request(const uint32_t &sip, const uint32_t &dip, Network_Device *netdev)
 {
     Arp_Hdr *arphdr;
     Arp_Ipv4 *arpdata;
@@ -147,7 +147,7 @@ int arp_request(const uint32_t &sip, const uint32_t &dip, NetworkDevice *netdev)
     return rc;
 }
 
-void arp_reply(SkBuff *skb, NetworkDevice *netdev)
+void arp_reply(SkBuff *skb, Network_Device *netdev)
 {
     Arp_Ipv4 *arpdata;
     Arp_Hdr *arphdr = arp_hdr(skb);

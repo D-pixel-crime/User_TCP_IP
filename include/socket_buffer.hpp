@@ -11,8 +11,8 @@ class SkBuff
 {
 public:
     list_head list_node;
-    RtEntry *rt;
-    NetworkDevice *dev;
+    Rt_Entry *rt;
+    Network_Device *dev;
     /*
        Rather than counting 'refcnt',
        I think its better to use 'SkBuff*' using 'shared_ptr', then no need to keep this in check.

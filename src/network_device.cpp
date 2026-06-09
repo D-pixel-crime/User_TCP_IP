@@ -6,7 +6,7 @@
 
 extern int running;
 
-NetworkDevice::NetworkDevice(std::string_view _addr, std::string_view _hwaddr, uint32_t _mtu) : addr(parse_ipv4_string(_addr)), mtu(_mtu)
+Network_Device::Network_Device(std::string_view _addr, std::string_view _hwaddr, uint32_t _mtu) : addr(parse_ipv4_string(_addr)), mtu(_mtu)
 {
     addr_len = sizeof(addr);
     auto parsedMac = parse_MAC_string(_hwaddr);
@@ -18,15 +18,15 @@ NetworkDevice::NetworkDevice(std::string_view _addr, std::string_view _hwaddr, u
 
 void network_device_init()
 {
-    loopback = new NetworkDevice("127.0.0.1", "00:00:00:00:00:00", 1500);
-    netdev = new NetworkDevice("10.0.0.10", "00:0c:29:6d:50:25", 1500);
+    loopback = new Network_Device("127.0.0.1", "00:00:00:00:00:00", 1500);
+    netdev = new Network_Device("10.0.0.10", "00:0c:29:6d:50:25", 1500);
 }
 
 int netdev_transmit(SkBuff *skb, uint8_t *dst_hw, const uint16_t &ethertype)
 {
     Eth_Hdr *hdr;
     int ret = 0;
-    NetworkDevice *dev = skb->dev;
+    Network_Device *dev = skb->dev;
 
     skb->push(Eth_Hdr::getSize());
 
@@ -91,7 +91,7 @@ void *netdev_rx_loop()
     return nullptr;
 }
 
-NetworkDevice *netdev_get(const uint32_t &sip)
+Network_Device *netdev_get(const uint32_t &sip)
 {
     if (netdev->addr == sip)
     {

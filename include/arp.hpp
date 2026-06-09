@@ -18,7 +18,7 @@ inline constexpr int ARP_RESOLVED = 2;
 
 inline void arp_debug(std::string_view str, const Arp_Hdr *hdr, const std::source_location loc = std::source_location::current())
 {
-    std::cout << std::format("arp {} (hwtype: {}, protype: {:04x}, hwsize: {}, prosize: {}, opcode: {:04x}) - {}:{}\n",
+    std::cout << std::format("ARP {} (hwtype: {}, protype: {:04x}, hwsize: {}, prosize: {}, opcode: {:04x}) - {}:{}\n",
                              str,
                              hdr->hwtype,
                              hdr->protype,
@@ -32,7 +32,7 @@ inline void arp_debug(std::string_view str, const Arp_Hdr *hdr, const std::sourc
 
 inline void arpdata_debug(std::string_view str, const Arp_Ipv4 *data, const std::source_location loc = std::source_location::current())
 {
-    std::cout << std::format("arp data {} (smac: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}, "
+    std::cout << std::format("ARP data {} (smac: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}, "
                              "sip: {}.{}.{}.{}, dmac: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}, "
                              "dip: {}.{}.{}.{}) - {}:{}\n",
                              str,
@@ -47,7 +47,7 @@ inline void arpdata_debug(std::string_view str, const Arp_Ipv4 *data, const std:
 
 inline void arpcache_debug(std::string_view str, const Arp_Cache_Entry *entry, const std::source_location loc = std::source_location::current())
 {
-    std::cout << std::format("arp cache {} (hwtype: {}, sip: {}.{}.{}.{}, "
+    std::cout << std::format("ARP cache {} (hwtype: {}, sip: {}.{}.{}.{}, "
                              "smac: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}, state: {}) - {}:{}\n",
                              str,
                              entry->hwtype,
@@ -122,8 +122,8 @@ void free_arp();
 
 void arp_rcv(SkBuff *skb);
 
-int arp_request(const uint32_t &sip, const uint32_t &dip, NetworkDevice *netdev);
+int arp_request(const uint32_t &sip, const uint32_t &dip, Network_Device *netdev);
 
-void arp_reply(SkBuff *skb, NetworkDevice *netdev);
+void arp_reply(SkBuff *skb, Network_Device *netdev);
 
 uint8_t *arp_get_hwaddr(const uint32_t &sip);

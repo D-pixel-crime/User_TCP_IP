@@ -87,15 +87,48 @@ inline void print_err(std::format_string<Args...> fmt, Args &&...args)
 
 /**
  * Calculates the sum of every 16 bits in a buffer.
- * @param buff The input buffer as a span of bytes.
+ * @param buff Pointer to the start of the buffer.
+ * @param count The size of the buffer in bytes.
  */
-uint32_t sum_every_16_bits(std::span<const uint8_t> buff);
+template <typename T>
+uint32_t sum_every_16_bits(const T *buff, size_t count)
+{
+    uint32_t ans = 0;
+    const uint16_t *temp = reinterpret_cast<const uint16_t *>(buff);
+
+    while (count > 1)
+    {
+        ans += *temp++;
+        count -= 2;
+    }
+
+    if (count > 0)
+    {
+        ans += *reinterpret_cast<const uint8_t *>(temp);
+    }
+
+    return ans;
+}
 
 /**
- * Calculates the official RFC 1071 "Internet Checksum" for a given buffer.
- * @param buff The input buffer as a span of bytes.
+ * @brief Calculates the official RFC 1071 "Internet Checksum" for a given buffer.
+ * @param buff Pointer to the start of the buffer.
+ * @param count The size of the buffer in bytes.
+ * @param start_sum An optional initial sum to cascade checksums (defaults to 0).
  */
-uint16_t checksum(std::span<const uint8_t> buff, uint32_t start_sum = 0);
+template <typename T>
+uint16_t checksum(const T *buff, const size_t count, const uint32_t start_sum = 0)
+{
+    uint32_t ans = start_sum;
+    ans += sum_every_16_bits(buff, count);
+
+    while (ans >> 16)
+    {
+        ans = (ans & 0xffff) + (ans >> 16);
+    }
+
+    return static_cast<uint16_t>(~ans);
+}
 
 /**
  * get_address: Resolves a hostname and port into a sockaddr structure.
@@ -103,16 +136,16 @@ uint16_t checksum(std::span<const uint8_t> buff, uint32_t start_sum = 0);
  * * @param port: The service name or port number to resolve.
  * * @param addr: Pointer to a sockaddr structure where the resolved address will be stored.
  */
-int get_address(std::string_view host, std::string_view port, struct sockaddr *addr);
+int get_address(const std::string &host, const std::string &port, struct sockaddr *addr);
 
 /**
  * Parses an IPv4 address string (e.g., "192.168.1.1") into a 32-bit integer.
  * @param addr The IPv4 address string to parse.
  */
-uint32_t parse_ipv4_string(std::string_view addr);
+uint32_t parse_ipv4_string(const std::string &addr);
 
 /**
  * Parses a MAC address string (e.g., "00:00:01:02:03:05") into a 32-bit integer.
  * @param mac_addr The MAC address string to parse.
  */
-uint8_t *parse_MAC_string(std::string_view mac_addr);
+uint8_t *parse_MAC_string(const std::string &mac_addr);

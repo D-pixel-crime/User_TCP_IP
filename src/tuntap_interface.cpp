@@ -47,7 +47,7 @@ inline int TUNTAP_Interface::tap_alloc()
 
     if ((err = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0)
     {
-        print_err("ERR: Could not ioctl tun/tap interface");
+        print_err("ERR(tap_alloc): Could not ioctl tun/tap interface");
         close(fd);
         std::exit(EXIT_FAILURE);
     }
@@ -67,19 +67,19 @@ TUNTAP_Interface::TUNTAP_Interface()
 
         if (set_interface_up(dev))
         {
-            print_err("ERR: Could not set interface {} up", dev);
+            print_err("ERR(TUNTAP_Interface): Could not set interface {} up", dev);
             std::exit(EXIT_FAILURE);
         }
 
         if (set_interface_route(dev, tap_route))
         {
-            print_err("ERR: Could not set route {} for interface {}", tap_route, dev);
+            print_err("ERR(TUNTAP_Interface): Could not set route {} for interface {}", tap_route, dev);
             std::exit(EXIT_FAILURE);
         }
 
         if (set_interface_address(dev, tap_addr))
         {
-            print_err("ERR: Could not set address {} for interface {}", tap_addr, dev);
+            print_err("ERR(TUNTAP_Interface): Could not set address {} for interface {}", tap_addr, dev);
             std::exit(EXIT_FAILURE);
         }
     }

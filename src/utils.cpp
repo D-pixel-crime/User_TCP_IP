@@ -38,7 +38,7 @@ uint32_t parse_ipv4_string(const std::string &addr)
 
     if (inet_pton(AF_INET, addr.c_str(), &(sa.sin_addr)) != 1)
     {
-        throw std::runtime_error(std::format("ERR: During parsing ip-{}.", addr));
+        throw std::runtime_error(std::format("ERR(utils): During parsing ip-{}.", addr));
     }
 
     return ntohl(sa.sin_addr.s_addr);

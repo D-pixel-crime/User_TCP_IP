@@ -6,7 +6,7 @@
 
 extern int running;
 
-Network_Device::Network_Device(std::string_view _addr, std::string_view _hwaddr, uint32_t _mtu) : addr(parse_ipv4_string(_addr)), mtu(_mtu)
+Network_Device::Network_Device(const std::string &_addr, const std::string &_hwaddr, uint32_t _mtu) : addr(parse_ipv4_string(_addr)), mtu(_mtu)
 {
     addr_len = sizeof(addr);
     auto parsedMac = parse_MAC_string(_hwaddr);
@@ -80,7 +80,7 @@ void *netdev_rx_loop()
 
         if (tuntap_read(reinterpret_cast<uint8_t *>(skb->data), BUFFLEN) < 0)
         {
-            print_err("ERR: Reading from tuntap_read!");
+            print_err("ERR(netdev_rx_loop): Reading from tuntap_read!");
             free_skb(skb);
             return nullptr;
         }

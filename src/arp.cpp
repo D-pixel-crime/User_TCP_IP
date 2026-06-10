@@ -1,5 +1,5 @@
-#include "../include/socket_buffer.hpp"
 #include "../include/network_device.hpp"
+#include "../include/socket_buffer.hpp"
 #include "../include/arp.hpp"
 #include "../include/intrusive_queue.hpp"
 #include <mutex>
@@ -46,7 +46,7 @@ int update_arp_translation_table(Arp_Hdr *hdr, Arp_Ipv4 *data)
     return found;
 }
 
-void arp_receive(SkBuff *skb)
+void arp_rcv(SkBuff *skb)
 {
     Arp_Ipv4 *arpdata;
     Network_Device *netdev;
@@ -56,7 +56,7 @@ void arp_receive(SkBuff *skb)
     arphdr->hwtype = ntohs(arphdr->hwtype);
     arphdr->protype = ntohs(arphdr->protype);
     arphdr->opcode = ntohs(arphdr->opcode);
-    arp_debug("In", arphdr);
+    arp_debug("ARP-In", arphdr);
 
     if (arphdr->hwtype != ARP_ETHERNET)
     {
@@ -75,7 +75,7 @@ void arp_receive(SkBuff *skb)
     arpdata = reinterpret_cast<Arp_Ipv4 *>(arphdr->data);
     arpdata->sip = ntohs(arpdata->sip);
     arpdata->dip = ntohs(arpdata->dip);
-    arpdata_debug("Receive", arpdata);
+    arpdata_debug("ARP_Data-Receive", arpdata);
 
     merge = update_arp_translation_table(arphdr, arpdata);
 
@@ -88,7 +88,7 @@ void arp_receive(SkBuff *skb)
 
     if (!merge && !insert_arp_translation_table(arphdr, arpdata))
     {
-        print_err("ERR: No free space in ARP translation table.");
+        print_err("ERR(arp_rcv): No free space in ARP translation table.");
         free_skb(skb);
         return;
     }
@@ -130,14 +130,14 @@ int arp_request(const uint32_t &sip, const uint32_t &dip, Network_Device *netdev
 
     arphdr = reinterpret_cast<Arp_Hdr *>(skb->push(Arp_Hdr::getSize()));
 
-    arp_debug("Request", arphdr);
+    arp_debug("ARP-Request", arphdr);
     arphdr->opcode = htons(ARP_REQUEST);
     arphdr->hwtype = htons(ARP_ETHERNET);
     arphdr->protype = htons(ETH_P_IP);
     arphdr->hwsize = sizeof(netdev->hwaddr);
     arphdr->prosize = 4;
 
-    arpdata_debug("Request", arpdata);
+    arpdata_debug("ARP_Data-Request", arpdata);
     arpdata->sip = htons(arpdata->sip);
     arpdata->dip = htons(arpdata->dip);
 
@@ -165,12 +165,12 @@ void arp_reply(SkBuff *skb, Network_Device *netdev)
 
     arphdr->opcode = ARP_REPLY;
 
-    arp_debug("Reply", arphdr);
+    arp_debug("ARP-Reply", arphdr);
     arphdr->opcode = htons(arphdr->opcode);
     arphdr->hwtype = htons(arphdr->hwtype);
     arphdr->protype = htons(arphdr->protype);
 
-    arpdata_debug("Reply", arpdata);
+    arpdata_debug("ARP_Data-Reply", arpdata);
     arpdata->sip = htonl(arpdata->sip);
     arpdata->dip = htonl(arpdata->dip);
 
@@ -191,7 +191,7 @@ uint8_t *arp_get_hwaddr(const uint32_t &sip)
                   {
         Arp_Cache_Entry* arp_entry = list_entry<Arp_Cache_Entry>(pos, Arp_Cache_Entry::getOffset__list_node());
         if(arp_entry->state == ARP_RESOLVED && arp_entry->sip == sip){
-            arpcache_debug("Entry", arp_entry);
+            arpcache_debug("ARP_Cache-Entry", arp_entry);
 
             std::memcpy(hwaddr, arp_entry->smac, 6);
             return;

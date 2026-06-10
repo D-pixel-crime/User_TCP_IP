@@ -23,7 +23,7 @@ public:
     uint8_t hwaddr[6]; // MAC Address
     uint32_t mtu;
 
-    Network_Device(std::string_view _addr, std::string_view _hwaddr, uint32_t _mtu);
+    Network_Device(const std::string &_addr, const std::string &_hwaddr, uint32_t _mtu);
 };
 
 inline Network_Device *loopback = nullptr;

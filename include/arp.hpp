@@ -67,7 +67,7 @@ public:
     size_t hwsize;
     uint8_t prosize;
     uint16_t opcode;
-    uint8_t data[0];
+    uint8_t data[];
 
 public:
     static size_t getSize()

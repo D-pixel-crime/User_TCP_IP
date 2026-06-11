@@ -35,8 +35,11 @@ inline void ip_debug(std::string_view str, const Ip_Hdr *hdr, const std::source_
 class __attribute__((packed)) Ip_Hdr
 {
 public:
-    uint8_t ihl;
-    uint8_t version = 4;
+#if __BYTE_ORDER == __BIG_ENDIAN
+    uint8_t version : 4, ihl : 4;
+#else
+    uint8_t ihl : 4, version : 4;
+#endif
     uint8_t tos;
     uint16_t len;
     uint16_t id;
@@ -46,7 +49,7 @@ public:
     uint16_t csum;
     uint32_t saddr;
     uint32_t daddr;
-    uint8_t data[0];
+    uint8_t data[];
 
     static size_t getSize()
     {

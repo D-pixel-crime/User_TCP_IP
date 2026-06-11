@@ -17,7 +17,7 @@ public:
     uint8_t type;
     uint8_t code;
     uint16_t csum;
-    uint8_t data[0];
+    uint8_t data[];
 };
 
 class __attribute__((packed)) ICMPv4_Echo
@@ -25,7 +25,7 @@ class __attribute__((packed)) ICMPv4_Echo
 public:
     uint16_t id;
     uint16_t seq;
-    uint8_t data[0];
+    uint8_t data[];
 };
 
 class __attribute__((packed)) ICMPv4_Dest_Unreachable
@@ -34,7 +34,7 @@ public:
     uint8_t unused;
     uint8_t len;
     uint16_t var;
-    uint8_t data[0];
+    uint8_t data[];
 };
 
 void icmpv4_incoming(SkBuff *skb);

@@ -20,8 +20,7 @@ public:
     uint8_t dmac[6];
     uint8_t smac[6];
     uint16_t ethertype;
-    /* flexible array member: use size 0 for C++ compatibility */
-    uint8_t payload[0];
+    uint8_t payload[];
 
     static inline size_t getSize()
     {

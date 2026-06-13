@@ -12,18 +12,17 @@ enum class TimerType : uint8_t
 class Timer
 {
 private:
-    Timer(const uint32_t &_expires, void *(*_handler)(void *), void *_arg, TimerType _type);
+    Timer(const uint32_t &_expires, std::function<void()> _handler, TimerType _type);
 
 public:
     list_head node;
     std::atomic<int> refcnt;
     uint32_t expires;
     int cancelled;
-    void *(*handler)(void *);
-    void *arg;
+    std::function<void()> handler;
     std::mutex lock;
 
-    static Timer *create(const uint32_t &_expires, void *(*_handler)(void *), void *_arg, TimerType _type);
+    static Timer *create(const uint32_t &_expires, std::function<void()> _handler, TimerType _type);
 
     static size_t getOffset__list_node()
     {

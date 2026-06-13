@@ -4,6 +4,7 @@
 #include "intrusive_queue.hpp"
 #include "ethernet.hpp"
 #include "ip.hpp"
+#include "timer.hpp"
 
 inline constexpr int TCP_FIN = 0x01;
 inline constexpr int TCP_SYN = 0x02;
@@ -166,12 +167,10 @@ public:
     int32_t srtt;
     int32_t rttvar;
     uint32_t rto;
-    /*To be implemented
     Timer *retransmit;
     Timer *delack;
     Timer *keepalive;
     Timer *linger;
-    */
     uint8_t delacks;
     uint16_t rmss;
     uint16_t smss;

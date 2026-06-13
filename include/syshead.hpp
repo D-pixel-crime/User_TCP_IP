@@ -8,7 +8,6 @@
 #include <linux/if_tun.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <sys/socket.h>
 #include <sys/un.h>
 #include <poll.h>
 #include <netdb.h>
@@ -28,3 +27,4 @@
 #include <shared_mutex>
 #include <condition_variable>
 #include <filesystem>
+#include <functional>

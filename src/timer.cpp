@@ -12,7 +12,7 @@ int timer_get_tick()
     return tick;
 }
 
-Timer::Timer(const uint32_t &_expires, void *(*_handler)(void *), void *_arg, TimerType _type) : refcnt{_type == TimerType::Oneshot ? 0 : 1}, cancelled{0}, handler{_handler}, arg{_arg}
+Timer::Timer(const uint32_t &_expires, std::function<void()> _handler, TimerType _type) : refcnt{_type == TimerType::Oneshot ? 0 : 1}, cancelled{0}, handler{_handler}
 {
     int tick = timer_get_tick();
     expires = tick + _expires;
@@ -23,9 +23,9 @@ Timer::Timer(const uint32_t &_expires, void *(*_handler)(void *), void *_arg, Ti
     }
 }
 
-Timer *Timer::create(const uint32_t &_expires, void *(*_handler)(void *), void *_arg, TimerType _type)
+Timer *Timer::create(const uint32_t &_expires, std::function<void()> _handler, TimerType _type)
 {
-    Timer *t = new Timer(_expires, _handler, _arg, _type);
+    Timer *t = new Timer(_expires, _handler, _type);
 
     {
         std::lock_guard<std::mutex> lock(norm_mutex);
@@ -85,10 +85,7 @@ void timers_tick()
 
         if(t->cancelled && t->refcnt == 0){
             timers_queue.queue_del(&t->node);
-            /*To be implemented
-                pthread_mutex_unlock(&t->lock);
-                timer_free(t);
-            */
+            timer_free(t);
         }
     } });
 }

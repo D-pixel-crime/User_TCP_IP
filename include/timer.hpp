@@ -3,7 +3,7 @@
 #include "intrusive_queue.hpp"
 #include "utils.hpp"
 
-enum class TimerType : uint8_t
+enum class Timer_Type : uint8_t
 {
     Trackable,
     Oneshot
@@ -12,7 +12,7 @@ enum class TimerType : uint8_t
 class Timer
 {
 private:
-    Timer(const uint32_t &_expires, std::function<void()> _handler, TimerType _type);
+    Timer(const uint32_t &_expires, std::function<void()> _handler, Timer_Type _type);
 
 public:
     list_head node;
@@ -22,7 +22,7 @@ public:
     std::function<void()> handler;
     std::mutex lock;
 
-    static Timer *create(const uint32_t &_expires, std::function<void()> _handler, TimerType _type);
+    static Timer *create(const uint32_t &_expires, std::function<void()> _handler, Timer_Type _type);
 
     static size_t getOffset__list_node()
     {

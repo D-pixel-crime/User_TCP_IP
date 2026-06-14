@@ -22,8 +22,10 @@ int insert_arp_translation_table(Arp_Hdr *hdr, Arp_Ipv4 *data)
 {
     Arp_Cache_Entry *new_entry = new Arp_Cache_Entry(hdr->hwtype, data->sip, data->smac, ARP_RESOLVED);
 
-    std::lock_guard<std::mutex> lock(arp_cache_mutex);
-    arp_cache_entry_queue.queue_add_tail(&new_entry->list);
+    {
+        std::lock_guard<std::mutex> lock(arp_cache_mutex);
+        arp_cache_entry_queue.queue_add_tail(&new_entry->list);
+    }
 
     return 0;
 }

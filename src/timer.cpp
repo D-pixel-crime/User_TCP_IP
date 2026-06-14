@@ -12,7 +12,7 @@ int timer_get_tick()
     return tick;
 }
 
-Timer::Timer(const uint32_t &_expires, std::function<void()> _handler, TimerType _type) : refcnt{_type == TimerType::Oneshot ? 0 : 1}, cancelled{0}, handler{_handler}
+Timer::Timer(const uint32_t &_expires, std::function<void()> _handler, Timer_Type _type) : refcnt{_type == Timer_Type::Oneshot ? 0 : 1}, cancelled{0}, handler{_handler}
 {
     int tick = timer_get_tick();
     expires = tick + _expires;
@@ -23,7 +23,7 @@ Timer::Timer(const uint32_t &_expires, std::function<void()> _handler, TimerType
     }
 }
 
-Timer *Timer::create(const uint32_t &_expires, std::function<void()> _handler, TimerType _type)
+Timer *Timer::create(const uint32_t &_expires, std::function<void()> _handler, Timer_Type _type)
 {
     Timer *t = new Timer(_expires, _handler, _type);
 
@@ -101,7 +101,7 @@ void *timers_start()
         */
 
         {
-            std::shared_lock<std::shared_mutex> lock(rw_mutex);
+            std::unique_lock<std::shared_mutex> lock(rw_mutex);
             tick += 10;
         }
         timers_tick();

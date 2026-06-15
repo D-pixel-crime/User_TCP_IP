@@ -3,6 +3,33 @@
 #include "syshead.hpp"
 #include "intrusive_queue.hpp"
 
+inline void socket_dbg(
+    const Socket *sock,
+    std::string_view msg,
+    auto &&...args,
+    const std::source_location loc = std::source_location::current())
+{
+    std::string custom_msg = std::vformat(msg, std::make_format_args(args...));
+
+    std::cout << std::format(
+                     "Socket fd {} pid {} state {} sk_state {} flags {} poll {} sport {} dport {} "
+                     "recv-q {} send-q {}: {} - {}:{}\n",
+                     sock->fd,
+                     sock->pid,
+                     sock->state,
+                     sock->sk->state,
+                     sock->flags,
+                     sock->sk->poll_events,
+                     sock->sk->sport,
+                     sock->sk->dport,
+                     sock->sk->receive_queue.qlen,
+                     sock->sk->write_queue.qlen,
+                     custom_msg,
+                     loc.file_name(),
+                     loc.line())
+              << std::flush;
+}
+
 enum class Socket_State : uint8_t
 {
     SS_FREE,
@@ -10,6 +37,20 @@ enum class Socket_State : uint8_t
     SS_CONNECTING,
     SS_CONNECTED,
     SS_DISCONNECTING
+};
+
+class Sock_Ops
+{
+public:
+    std::function<int(Socket *sock, const sockaddr *addr, int addrlen, int flags)> connect;
+    std::function<int(Socket *sock, const void *buff, int len)> write;
+    std::function<int(Socket *sock, void *buff, int len)> read;
+    std::function<int(Socket *sock)> close;
+    std::function<int(Socket *sock)> free;
+    std::function<int(Socket *sock)> abort;
+    std::function<int(Socket *sock)> poll;
+    std::function<int(Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len)> getpeername;
+    std::function<int(Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len)> getsockname;
 };
 
 class Socket
@@ -37,20 +78,6 @@ public:
     Socket(pid_t _pid);
 };
 
-class Sock_Ops
-{
-public:
-    std::function<int(Socket *sock, const sockaddr *addr)> connect;
-    std::function<int(Socket *sock, const void *buff, int len)> write;
-    std::function<int(Socket *sock, void *buff, int len)> read;
-    std::function<int(Socket *sock)> close;
-    std::function<int(Socket *sock)> free;
-    std::function<int(Socket *sock)> abort;
-    std::function<int(Socket *sock)> poll;
-    std::function<int(Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len)> getpeername;
-    std::function<int(Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len)> getsockname;
-};
-
 class Sock_Type
 {
 public:
@@ -74,6 +101,8 @@ int socket_release(Socket *sock);
 
 int socket_free(Socket *sock);
 
+Socket *socket_find(Socket *query);
+
 template <typename T>
 void *socket_garbage_collect(T *arg);
 
@@ -82,3 +111,15 @@ int socket_delete(Socket *sock);
 void abort_sockets();
 
 Socket *get_socket(const pid_t &_pid, const uint32_t &_fd);
+
+Socket *socket_lookup(const uint16_t &remote_port, const uint16_t &local_port);
+
+int _socket(const pid_t &pid, const int &domain, const int &type, const int &protocol);
+
+int _connect(const pid_t &pid, const int &sockfd, const sockaddr *addr, const socklen_t &addrlen);
+
+int _write(const pid_t &pid, const int &sockfd, const void *buff, const unsigned int &count);
+
+int _read(const pid_t &pid, const int &sockfd, void *buff, const unsigned int &count);
+
+int _close(const pid_t &pid, const int &sockfd);

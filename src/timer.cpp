@@ -7,7 +7,7 @@ int tick = 0;
 
 int timer_get_tick()
 {
-    std::shared_lock<std::shared_mutex> rwlock(rw_mutex);
+    std::shared_lock<std::shared_mutex> rd_lock(rw_mutex);
 
     return tick;
 }
@@ -101,7 +101,7 @@ void *timers_start()
         */
 
         {
-            std::unique_lock<std::shared_mutex> lock(rw_mutex);
+            std::unique_lock<std::shared_mutex> wr_lock(rw_mutex);
             tick += 10;
         }
         timers_tick();

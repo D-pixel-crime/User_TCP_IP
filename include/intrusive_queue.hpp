@@ -46,6 +46,15 @@ private:
     size_t len;
     size_t offset;
 
+    void __list_add(list_head *_new, list_head *prev, list_head *next)
+    {
+        next->prev = _new;
+        _new->next = next;
+        _new->prev = prev;
+        prev->next = _new;
+        len++;
+    }
+
 public:
     IntrusiveQueue(size_t _offset) : len(0), offset(_offset)
     {
@@ -79,20 +88,17 @@ public:
 
     void queue_add(list_head *_newListHead)
     {
-        (head.next)->prev = _newListHead;
-        _newListHead->prev = &head;
-        _newListHead->next = (head.next);
-        (head.next) = _newListHead;
-        len++;
+        __list_add(_newListHead, &head, head.next);
     }
 
     void queue_add_tail(list_head *_newListTail)
     {
-        (head.prev)->next = _newListTail;
-        _newListTail->next = &head;
-        _newListTail->prev = (head.prev);
-        (head.prev) = _newListTail;
-        len++;
+        __list_add(_newListTail, head.prev, &head);
+    }
+
+    void queue_add_before(list_head *_newNode, list_head *_targetNode)
+    {
+        __list_add(_newNode, _targetNode->prev, _targetNode);
     }
 
     void queue_del(list_head *_toDel)

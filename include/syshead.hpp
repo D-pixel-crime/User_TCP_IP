@@ -14,8 +14,8 @@
 #include <sys/prctl.h>
 #include <sys/capability.h>
 
-// cpp equivalent of c headers
 #include <cstdint>
+#include <algorithm>
 #include <cstdlib>
 #include <cstddef>
 #include <cstring>
@@ -28,3 +28,4 @@
 #include <condition_variable>
 #include <filesystem>
 #include <functional>
+#include <random>

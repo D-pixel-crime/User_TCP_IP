@@ -5,6 +5,7 @@
 #include "ethernet.hpp"
 #include "ip.hpp"
 #include "timer.hpp"
+#include "sock.hpp"
 
 inline constexpr int TCP_FIN = 0x01;
 inline constexpr int TCP_SYN = 0x02;
@@ -139,8 +140,8 @@ public:
     uint32_t snd_up;
     uint32_t snd_wl1;
     uint32_t snd_wl2;
-    uint32_t snd_iss;
-    uint32_t snd_rcv_nxt;
+    uint32_t iss;
+    uint32_t rcv_nxt;
     uint32_t rcv_wnd;
     uint32_t rcv_up;
     uint32_t irs;
@@ -156,9 +157,7 @@ public:
 class Tcp_Sock
 {
 public:
-    /*To be implemented
     Sock sk;
-    */
     int fd;
     uint16_t tcp_header_len;
     Tcb tcb;
@@ -179,10 +178,80 @@ public:
 
     uint8_t sackok;
     uint8_t sacks_allowed;
-    uint8_t sacks_len;
+    uint8_t sacklen;
     Tcp_Sack_Block sacks[4];
 
     uint8_t tsopt;
 
     IntrusiveQueue<SkBuff> ofo_queue;
+
+    Tcp_Sock();
 };
+
+SkBuff *tcp_alloc_skb(const int &optlen, const int &size);
+
+template <typename T>
+Tcp_Sock *tcp_sk(T *sk)
+{
+    return reinterpret_cast<Tcp_Sock *>(sk);
+}
+
+Sock *tcp_alloc_sock();
+
+int tcp_v4_init_sock(Sock *sk);
+
+int tcp_init_sock(Sock *sk);
+
+void __tcp_set_state(Sock *sk, const uint32_t &state);
+
+uint16_t generate_port();
+
+int tcp_connect(Sock *sk);
+
+int tcp_v4_connect(Sock *sk, const sockaddr *addr, const int &addrlen, const int &flags);
+
+int tcp_disconnect(Sock *sk, const int &flags);
+
+int tcp_write(Sock *sk, const void *buff, const int &len);
+
+int tcp_read(Sock *sk, const void *buff, const int &len);
+
+int tcp_recv_notify(Sock *sk);
+
+int tcp_close(Sock *sk);
+
+int tcp_abort(Sock *sk);
+
+int tcp_free(Sock *sk);
+
+int tcp_done(Sock *sk);
+
+void tcp_stop_rto_timer(Tcp_Sock *tsk);
+
+void tcp_release_rto_timer(Tcp_Sock *tsk);
+
+void tcp_stop_delack_timer(Tcp_Sock *tsk);
+
+void tcp_release_delack_timer(Tcp_Sock *tsk);
+
+void tcp_clear_timers(Sock *sk);
+
+void tcp_handle_fin_state(Sock *sk);
+
+void tcp_enter_time_wait(Sock *sk);
+
+void tcp_rearm_user_timeout(Sock *sk);
+
+void tcp_rtt(Tcp_Sock *tsk);
+
+int tcp_calculate_sacks(Tcp_Sock *tsk);
+
+void tcp_init_segment(Tcp_Hdr *tcphdr, Ip_Hdr *iphdr, SkBuff *skb);
+
+void tcp_clear_queues(Tcp_Sock *tsk);
+
+void tcp_in(SkBuff *skb);
+
+int tcp_udp_checksum(const uint32_t &saddr, const uint32_t &daddr, const uint8_t proto, const uint8_t *data, const uint16_t &len);
+
+int tcp_v4_checksum(SkBuff *skb, const uint32_t &saddr, const uint32_t &daddr);

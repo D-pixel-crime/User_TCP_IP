@@ -40,10 +40,8 @@ void sock_init_data(Socket *sock, Sock *sk)
 
 void sock_free(Sock *sk)
 {
-    /*To be implemented:
-        skb_queue_free(&sk->receive_queue);
-        skb_queue_free(&sk->write_queue);
-    */
+    skb_queue_free(&sk->receive_queue);
+    skb_queue_free(&sk->write_queue);
 }
 
 void sock_connected(Sock *sk)

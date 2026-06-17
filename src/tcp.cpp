@@ -13,19 +13,6 @@ Tcp_Sock::Tcp_Sock() : sackok{1}, rmss{1460}, smss{536}, ofo_queue(IntrusiveQueu
     sk.state = (int)Tcp_States::TCP_CLOSE;
 }
 
-SkBuff *tcp_alloc_skb(const int &optlen, const int &size)
-{
-    int reserveSize = Eth_Hdr::getSize() + Ip_Hdr::getSize() + Tcp_Hdr::getSize() + optlen + size;
-
-    SkBuff *skb = new SkBuff(reserveSize);
-    skb->reserve_headroom(reserveSize);
-    skb->protocol = IP_TCP;
-    skb->data_len = size;
-    skb->seq = 0;
-
-    return skb;
-}
-
 Sock *tcp_alloc_sock()
 {
     return reinterpret_cast<Sock *>(new Tcp_Sock());
@@ -42,7 +29,7 @@ int tcp_init_sock(Sock *sk)
     return 0;
 }
 
-void __tcp_set_state(Sock *sk, const uint32_t &state)
+void tcp_set_state(Sock *sk, const uint32_t &state)
 {
     sk->state = state;
 }
@@ -85,32 +72,6 @@ int generate_iss()
     return distrib(gen);
 }
 
-int tcp_connect(Sock *sk)
-{
-    Tcp_Sock *tsk = tcp_sk(sk);
-    Tcb *tcb = &tsk->tcb;
-
-    tsk->tcp_header_len = Tcp_Hdr::getSize();
-    tcb->iss = generate_iss();
-    tcb->snd_wnd = tcb->snd_wl1 = 0;
-
-    tcb->snd_una = tcb->iss;
-    tcb->snd_up = tcb->iss;
-    tcb->snd_nxt = tcb->iss;
-
-    /*To be implemented:
-        tcb_select_initial_window(&tsk->tcb.rcv_wnd);
-    */
-
-    int rc;
-    /*To be implemented:
-        rc = tcp_send_syn(sk);
-    */
-    tcb->snd_nxt++;
-
-    return rc;
-}
-
 int tcp_v4_connect(Sock *sk, const sockaddr *addr, const int &addrlen, const int &flags)
 {
     uint16_t dport = (reinterpret_cast<const sockaddr_in *>(addr))->sin_port;
@@ -120,9 +81,7 @@ int tcp_v4_connect(Sock *sk, const sockaddr *addr, const int &addrlen, const int
     sk->sport = generate_port();
     sk->daddr = daddr;
 
-    /* To be implemented:
-        return tcp_connect(sk);
-    */
+    return tcp_connect(sk);
 }
 
 int tcp_disconnect(Sock *sk, const int &flags)
@@ -151,9 +110,7 @@ int tcp_write(Sock *sk, const void *buff, const int &len)
         return ret;
     }
 
-    /*To be implemented:
-        return tcp_send(tsk, buff, len);
-    */
+    return tcp_send(tsk, buff, len);
 }
 
 int tcp_read(Sock *sk, const void *buff, const int &len)
@@ -234,21 +191,15 @@ int tcp_close(Sock *sk)
     case Tcp_States::TCP_LISTEN:
     case Tcp_States::TCP_SYN_SENT:
     case Tcp_States::TCP_SYN_RECEIVED:
-        /*To be implemented
-            return tcp_done(sk);
-        */
+        return tcp_done(sk);
 
     case Tcp_States::TCP_ESTABLISHED:
-        /*To be implemented
-            tcp_set_state(sk, TCP_FIN_WAIT_1);
-            tcp_queue_fin(sk);
-        */
+        tcp_set_state(sk, (int)Tcp_States::TCP_FIN_WAIT_1);
+        tcp_queue_fin(sk);
         break;
 
     case Tcp_States::TCP_CLOSE_WAIT:
-        /*To be implemented
-            tcp_queue_fin(sk);
-        */
+        tcp_queue_fin(sk);
         break;
 
     default:
@@ -262,11 +213,10 @@ int tcp_close(Sock *sk)
 int tcp_abort(Sock *sk)
 {
     Tcp_Sock *tsk = tcp_sk(sk);
-    /*To be implemented
-        tcp_send_reset(tsk);
 
-        return tcp_done(sk);
-    */
+    tcp_send_reset(tsk);
+
+    return tcp_done(sk);
 }
 
 int tcp_free(Sock *sk)
@@ -283,9 +233,8 @@ int tcp_free(Sock *sk)
 
 int tcp_done(Sock *sk)
 {
-    /*To be implemented:
-        tcp_set_state(sk, TCP_CLOSING);
-    */
+
+    tcp_set_state(sk, (int)Tcp_States::TCP_CLOSING);
     tcp_free(sk);
     return socket_delete(sk->sock);
 }
@@ -354,15 +303,13 @@ void tcp_handle_fin_state(Sock *sk)
     switch ((Tcp_States)sk->state)
     {
     case Tcp_States::TCP_CLOSE_WAIT:
-        /*To be implemented:
-            tcp_set_state(sk, TCP_LAST_ACK);
-        */
+
+        tcp_set_state(sk, (int)Tcp_States::TCP_LAST_ACK);
         break;
 
     case Tcp_States::TCP_ESTABLISHED:
-        /*To be implemented:
-            tcp_set_state(sk, TCP_FIN_WAIT_1);
-        */
+
+        tcp_set_state(sk, (int)Tcp_States::TCP_FIN_WAIT_1);
         break;
     }
 }
@@ -413,9 +360,7 @@ void tcp_enter_time_wait(Sock *sk)
 {
     Tcp_Sock *tsk = tcp_sk(sk);
 
-    /*To be implemented:
-        tcp_set_state(sk, TCP_TIME_WAIT);
-    */
+    tcp_set_state(sk, (int)Tcp_States::TCP_TIME_WAIT);
 
     tcp_clear_timers(sk);
     tsk->linger = Timer::create(TCP_2MSL, [sk]()
@@ -560,9 +505,7 @@ void tcp_init_segment(Tcp_Hdr *tcphdr, Ip_Hdr *iphdr, SkBuff *skb)
 
 void tcp_clear_queues(Tcp_Sock *tsk)
 {
-    /*To be implemented:
-        skb_queue_free(&tsk->ofo_queue);
-    */
+    skb_queue_free(&tsk->ofo_queue);
 }
 
 void tcp_in(SkBuff *skb)
@@ -588,8 +531,8 @@ void tcp_in(SkBuff *skb)
 
         /*To be implemented:
             tcp_in_dbg(th, sk, skb);
-            tcp_input_state(sk, th, skb);
         */
+        tcp_input_state(sk, tcphdr, skb);
 
         socket_release(sk->sock);
     }

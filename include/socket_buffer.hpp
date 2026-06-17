@@ -55,15 +55,14 @@ void free_skb(SkBuff *skb)
     skb->refcnt--;
 }
 
-/* To be implemented
-static inline void skb_queue_free(struct sk_buff_head *list)
+inline void skb_queue_free(IntrusiveQueue<SkBuff> *queue)
 {
-    struct sk_buff *skb = NULL;
+    SkBuff *skb = nullptr;
 
-    while ((skb = skb_peek(list)) != NULL) {
-        skb_dequeue(list);
+    while (skb = queue->queue_first_entry())
+    {
+        queue->dequeue();
         skb->refcnt--;
         free_skb(skb);
     }
 }
-*/

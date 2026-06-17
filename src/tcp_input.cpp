@@ -181,8 +181,8 @@ int tcp_synsent(Tcp_Sock *tsk, SkBuff *skb, Tcp_Hdr *tcphdr)
         if (tcphdr->ack_seq < tcb->snd_una || tcphdr->ack_seq > tcb->snd_nxt)
         {
             /*To be implemented:
-            tcpsock_dbg("ACK is unacceptable", sk);
-            Reset Behaviour
+                tcpsock_dbg("ACK is unacceptable", sk);
+                Reset Behaviour
             */
         }
 
@@ -213,30 +213,23 @@ int tcp_synsent(Tcp_Sock *tsk, SkBuff *skb, Tcp_Hdr *tcphdr)
 
     if (tcb->snd_una > tcb->iss)
     {
-        /*To be implemented:
-            tcp_set_state(sk, TCP_ESTABLISHED);
-        */
+
+        tcp_set_state(sk, (int)Tcp_States::TCP_ESTABLISHED);
         tcb->snd_una = tcb->snd_nxt;
         tsk->backoff = 0;
 
         /* RFC 6298: Sender SHOULD set RTO <= 1 second */
         tsk->rto = 1000;
-        /*To be implemented:
-             tcp_send_ack(&tsk->sk);
-        */
+        tcp_send_ack(&tsk->sk);
         tcp_rearm_user_timeout(sk);
         tcp_parse_opts(tsk, tcphdr);
         sock_connected(sk);
     }
     else
     {
-        /*To be implemented:
-            tcp_set_state(sk, TCP_SYN_RECEIVED);
-        */
+        tcp_set_state(sk, (int)Tcp_States::TCP_SYN_RECEIVED);
         tcb->snd_una = tcb->iss;
-        /*To be implemented:
-             tcp_send_synack(&tsk->sk);
-        */
+        tcp_send_synsack(&tsk->sk);
     }
 
     tcp_drop(sk, skb);
@@ -264,10 +257,7 @@ int tcp_closed(Tcp_Sock *tsk, SkBuff *skb, Tcp_Hdr *tcphdr)
         return 0;
     }
 
-    int rc = -1;
-    /*To be implemented:
-        int rc = tcp_send_reset(tsk);
-    */
+    int rc = tcp_send_reset(tsk);
     free_skb(skb);
     return rc;
 }
@@ -302,9 +292,7 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
          */
         if (!tcphdr->rst)
         {
-            /*To be implemented:
-                tcp_send_ack(sk);
-            */
+            tcp_send_ack(sk);
         }
 
         return tcp_drop(sk, skb);
@@ -325,9 +313,7 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
     if (tcphdr->syn)
     {
         /* RFC 5961 Section 4.2 */
-        /*To be implemented:
-            tcp_send_challenge_ack(sk, skb);
-        */
+        tcp_send_challenge_ack(sk, skb);
         return tcp_drop(sk, skb);
     }
 
@@ -341,9 +327,8 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
     case Tcp_States::TCP_SYN_RECEIVED:
         if (tcb->snd_una <= tcphdr->ack_seq && tcphdr->ack_seq < tcb->snd_nxt)
         {
-            /*To be implemented:
-                tcp_set_state(sk, TCP_ESTABLISHED);
-            */
+
+            tcp_set_state(sk, (int)Tcp_States::TCP_ESTABLISHED);
         }
         else
         {
@@ -398,9 +383,7 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
         switch ((Tcp_States)sk->state)
         {
         case Tcp_States::TCP_FIN_WAIT_1:
-            /*To be implemented:
-                tcp_set_state(sk, TCP_FIN_WAIT_2);
-            */
+            tcp_set_state(sk, (int)Tcp_States::TCP_FIN_WAIT_2);
 
         case Tcp_States::TCP_FIN_WAIT_2:
             break;
@@ -409,9 +392,7 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
             /* In addition to the processing for the ESTABLISHED state, if
              * the ACK acknowledges our FIN then enter the TIME-WAIT state,
                otherwise ignore the segment. */
-            /*To be implemented:
-                tcp_set_state(sk, TCP_TIME_WAIT);
-            */
+            tcp_set_state(sk, (int)Tcp_States::TCP_TIME_WAIT);
             break;
 
         case Tcp_States::TCP_LAST_ACK:
@@ -430,9 +411,7 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
                     tcpsock_dbg("Remote FIN retransmitted?", sk);
                 */
                 tsk->flags |= TCP_FIN;
-                /*To be implemented:
-                     tcp_send_ack(sk);
-                 */
+                tcp_send_ack(sk);
             }
             break;
         }
@@ -487,18 +466,14 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
         tsk->flags |= TCP_FIN;
         sk->poll_events |= (POLLIN | POLLPRI | POLLRDNORM | POLLRDBAND);
 
-        /*To be implemented:
-         tcp_send_ack(sk);
-        */
+        tcp_send_ack(sk);
         tsk->sk.ops->recv_notify(&tsk->sk);
 
         switch ((Tcp_States)sk->state)
         {
         case Tcp_States::TCP_ESTABLISHED:
         case Tcp_States::TCP_SYN_RECEIVED:
-            /*To be implemented:
-                tcp_set_state(sk, TCP_CLOSE_WAIT);
-            */
+            tcp_set_state(sk, (int)Tcp_States::TCP_CLOSE_WAIT);
             break;
 
         case Tcp_States::TCP_FIN_WAIT_1:
@@ -513,9 +488,7 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
             }
             else
             {
-                /*To be implemented:
-                    tcp_set_state(sk, TCP_CLOSING);
-                */
+                tcp_set_state(sk, (int)Tcp_States::TCP_CLOSING);
             }
             break;
 
@@ -558,28 +531,19 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
              */
             if (!tsk->inflight && pending > 0)
             {
-                /*To be implemented:
-                    tcp_send_next(sk, pending);
-                */
+                tcp_send_next(sk, pending);
                 tsk->inflight += pending;
-                /*To be implemented:
-                     tcp_rearm_rto_timer(tsk);
-                 */
+                tcp_rearm_rto_timer(tsk);
             }
             else if (tcphdr->psh || (skb->data_len > 1000 && ++tsk->delacks > 1))
             {
                 tsk->delack = 0;
-                /*To be implemented:
-                    tcp_send_ack(sk);
-                */
+                tcp_send_ack(sk);
             }
             else if (skb->data_len > 0)
             {
                 tsk->delack = Timer::create(200, [tsk]()
-                                            {
-                        /*To be implemented:
-                            tcp_send_delack(&tsk->sk);
-                        */ }, Timer_Type::Trackable);
+                                            { tcp_send_delack(&tsk->sk); }, Timer_Type::Trackable);
             }
         }
     }

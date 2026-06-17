@@ -18,7 +18,7 @@ inline constexpr int TCP_ECN = 0x40;
 inline constexpr int TCP_WIN = 0x80;
 
 inline constexpr int TCP_SYN_BACKOFF = 500;
-inline constexpr int TCP_CONN_RESTRIES = 3;
+inline constexpr int TCP_CONN_RETRIES = 3;
 
 inline constexpr int TCP_OPT_NOOP = 1;
 inline constexpr int TCP_OPTLEN_MSS = 4;
@@ -50,13 +50,19 @@ public:
         return sizeof(Tcp_Hdr);
     }
 
+    static size_t getDoffset()
+    {
+        return getSize() / 4;
+    }
+
     auto tcp_hlen()
     {
         return hl << 2;
     }
 };
 
-Tcp_Hdr *tcp_hdr(SkBuff *skb)
+template <typename T>
+Tcp_Hdr *tcp_hdr(T *skb)
 {
     return reinterpret_cast<Tcp_Hdr *>(skb->head + Eth_Hdr::getSize() + Ip_Hdr::getSize());
 }
@@ -188,8 +194,6 @@ public:
     Tcp_Sock();
 };
 
-SkBuff *tcp_alloc_skb(const int &optlen, const int &size);
-
 template <typename T>
 Tcp_Sock *tcp_sk(T *sk)
 {
@@ -202,11 +206,11 @@ int tcp_v4_init_sock(Sock *sk);
 
 int tcp_init_sock(Sock *sk);
 
-void __tcp_set_state(Sock *sk, const uint32_t &state);
+void tcp_set_state(Sock *sk, const uint32_t &state);
 
 uint16_t generate_port();
 
-int tcp_connect(Sock *sk);
+int generate_iss();
 
 int tcp_v4_connect(Sock *sk, const sockaddr *addr, const int &addrlen, const int &flags);
 
@@ -255,3 +259,65 @@ void tcp_in(SkBuff *skb);
 int tcp_udp_checksum(const uint32_t &saddr, const uint32_t &daddr, const uint8_t proto, const uint8_t *data, const uint16_t &len);
 
 int tcp_v4_checksum(SkBuff *skb, const uint32_t &saddr, const uint32_t &daddr);
+
+int tcp_parse_opts(Tcp_Sock *tsk, Tcp_Hdr *tcphdr);
+
+int tcp_clean_rto_queue(Sock *sk, const uint32_t &una);
+
+int tcp_verify_segment(Tcp_Sock *tsk, Tcp_Hdr *tcphdr, SkBuff *skb);
+
+void tcp_reset(Sock *sk);
+
+int tcp_synsent(Tcp_Sock *tsk, SkBuff *skb, Tcp_Hdr *tcphdr);
+
+int tcp_closed(Tcp_Sock *tsk, SkBuff *skb, Tcp_Hdr *tcphdr);
+
+int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb);
+
+int tcp_receive(Tcp_Sock *tsk, void *buff, const int &len);
+
+SkBuff *tcp_alloc_skb(const int &optlen, const int &size);
+
+int tcp_write_syn_options(Tcp_Hdr *tcphdr, Tcp_Options *opts, const int &opt_len);
+
+int tcp_syn_options(Sock *sk, Tcp_Options *opts);
+
+int tcp_write_options(Tcp_Sock *tsk, Tcp_Hdr *tcphdr);
+
+int tcp_transmit_skb(Sock *sk, SkBuff *skb, const uint32_t &seq);
+
+int tcp_queue_transmit_skb(Sock *sk, SkBuff *skb);
+
+int tcp_send_synsack(Sock *sk);
+
+void *tcp_send_delack(void *arg);
+
+int tcp_send_next(Sock *sk, const int &amount);
+
+int tcp_options_len(Sock *sk);
+
+int tcp_send_ack(Sock *sk);
+
+int tcp_send_syn(Sock *sk);
+
+int tcp_send_fin(Sock *sk);
+
+void tcp_select_initial_window(uint32_t *rcv_wnd);
+
+void tcp_notify_user(Sock *sk);
+
+void *tcp_connect_rto(void *arg);
+
+void *tcp_retransmission_timeout(void *arg);
+
+void tcp_rearm_rto_timer(Tcp_Sock *tsk);
+
+int tcp_connect(Sock *sk);
+
+int tcp_send(Tcp_Sock *tsk, const void *buff, const int &len);
+
+int tcp_send_reset(Tcp_Sock *tsk);
+
+int tcp_send_challenge_ack(Sock *sk, SkBuff *skb);
+
+int tcp_queue_fin(Sock *sk);

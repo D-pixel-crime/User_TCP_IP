@@ -123,9 +123,7 @@ int tcp_data_queue(Tcp_Sock *tsk, Tcp_Hdr *tcphdr, SkBuff *skb)
         /*
             Per RFC5581, send an immediate duplicate ACK on receiving an out-of-order segment to notify the sender of the missing sequence number.
         */
-        /*To be implemented:
-            tcp_send_ack(sk);
-        */
+        tcp_send_ack(sk);
     }
 
     return 0;

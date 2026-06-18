@@ -122,17 +122,17 @@ void tcp_reset(Sock *sk)
 {
     sk->poll_events = (POLLOUT | POLLWRNORM | POLLERR | POLLHUP);
 
-    switch ((Tcp_States)sk->state)
+    switch ((Tcp_State)sk->state)
     {
-    case Tcp_States::TCP_SYN_SENT:
+    case Tcp_State::TCP_SYN_SENT:
         sk->err = -ECONNREFUSED;
         break;
 
-    case Tcp_States::TCP_CLOSE_WAIT:
+    case Tcp_State::TCP_CLOSE_WAIT:
         sk->err = -EPIPE;
         break;
 
-    case Tcp_States::TCP_CLOSE:
+    case Tcp_State::TCP_CLOSE:
         return;
 
     default:
@@ -214,7 +214,7 @@ int tcp_synsent(Tcp_Sock *tsk, SkBuff *skb, Tcp_Hdr *tcphdr)
     if (tcb->snd_una > tcb->iss)
     {
 
-        tcp_set_state(sk, (int)Tcp_States::TCP_ESTABLISHED);
+        tcp_set_state(sk, (int)Tcp_State::TCP_ESTABLISHED);
         tcb->snd_una = tcb->snd_nxt;
         tsk->backoff = 0;
 
@@ -227,7 +227,7 @@ int tcp_synsent(Tcp_Sock *tsk, SkBuff *skb, Tcp_Hdr *tcphdr)
     }
     else
     {
-        tcp_set_state(sk, (int)Tcp_States::TCP_SYN_RECEIVED);
+        tcp_set_state(sk, (int)Tcp_State::TCP_SYN_RECEIVED);
         tcb->snd_una = tcb->iss;
         tcp_send_synsack(&tsk->sk);
     }
@@ -271,15 +271,15 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
         tcpsock_dbg("input state", sk);
     */
 
-    switch ((Tcp_States)sk->state)
+    switch ((Tcp_State)sk->state)
     {
-    case Tcp_States::TCP_CLOSE:
+    case Tcp_State::TCP_CLOSE:
         return tcp_closed(tsk, skb, tcphdr);
 
-    case Tcp_States::TCP_LISTEN:
+    case Tcp_State::TCP_LISTEN:
         return tcp_listen(tsk, skb, tcphdr);
 
-    case Tcp_States::TCP_SYN_SENT:
+    case Tcp_State::TCP_SYN_SENT:
         return tcp_synsent(tsk, skb, tcphdr);
     }
 
@@ -322,24 +322,24 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
         return tcp_drop(sk, skb);
     }
 
-    switch ((Tcp_States)sk->state)
+    switch ((Tcp_State)sk->state)
     {
-    case Tcp_States::TCP_SYN_RECEIVED:
+    case Tcp_State::TCP_SYN_RECEIVED:
         if (tcb->snd_una <= tcphdr->ack_seq && tcphdr->ack_seq < tcb->snd_nxt)
         {
 
-            tcp_set_state(sk, (int)Tcp_States::TCP_ESTABLISHED);
+            tcp_set_state(sk, (int)Tcp_State::TCP_ESTABLISHED);
         }
         else
         {
             return tcp_drop(sk, skb);
         }
 
-    case Tcp_States::TCP_ESTABLISHED:
-    case Tcp_States::TCP_FIN_WAIT_1:
-    case Tcp_States::TCP_CLOSE_WAIT:
-    case Tcp_States::TCP_CLOSING:
-    case Tcp_States::TCP_LAST_ACK:
+    case Tcp_State::TCP_ESTABLISHED:
+    case Tcp_State::TCP_FIN_WAIT_1:
+    case Tcp_State::TCP_CLOSE_WAIT:
+    case Tcp_State::TCP_CLOSING:
+    case Tcp_State::TCP_LAST_ACK:
         if (tcb->snd_una < tcphdr->ack_seq && tcphdr->ack_seq < tcb->snd_nxt)
         {
             /*
@@ -380,26 +380,26 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
 
     if (sk->write_queue.isEmpty())
     {
-        switch ((Tcp_States)sk->state)
+        switch ((Tcp_State)sk->state)
         {
-        case Tcp_States::TCP_FIN_WAIT_1:
-            tcp_set_state(sk, (int)Tcp_States::TCP_FIN_WAIT_2);
+        case Tcp_State::TCP_FIN_WAIT_1:
+            tcp_set_state(sk, (int)Tcp_State::TCP_FIN_WAIT_2);
 
-        case Tcp_States::TCP_FIN_WAIT_2:
+        case Tcp_State::TCP_FIN_WAIT_2:
             break;
 
-        case Tcp_States::TCP_CLOSING:
+        case Tcp_State::TCP_CLOSING:
             /* In addition to the processing for the ESTABLISHED state, if
              * the ACK acknowledges our FIN then enter the TIME-WAIT state,
                otherwise ignore the segment. */
-            tcp_set_state(sk, (int)Tcp_States::TCP_TIME_WAIT);
+            tcp_set_state(sk, (int)Tcp_State::TCP_TIME_WAIT);
             break;
 
-        case Tcp_States::TCP_LAST_ACK:
+        case Tcp_State::TCP_LAST_ACK:
             free_skb(skb);
             return tcp_done(sk);
 
-        case Tcp_States::TCP_TIME_WAIT:
+        case Tcp_State::TCP_TIME_WAIT:
             /*
              * TIME-WAIT State: Only a remote FIN retransmission can arrive.
              * - Send an ACK in response.
@@ -426,21 +426,21 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
 
     int expected = skb->seq == tcb->rcv_nxt;
 
-    switch ((Tcp_States)sk->state)
+    switch ((Tcp_State)sk->state)
     {
-    case Tcp_States::TCP_ESTABLISHED:
-    case Tcp_States::TCP_FIN_WAIT_1:
-    case Tcp_States::TCP_FIN_WAIT_2:
+    case Tcp_State::TCP_ESTABLISHED:
+    case Tcp_State::TCP_FIN_WAIT_1:
+    case Tcp_State::TCP_FIN_WAIT_2:
         if (tcphdr->psh || skb->data_len > 0)
         {
             tcp_data_queue(tsk, tcphdr, skb);
         }
         break;
 
-    case Tcp_States::TCP_CLOSE_WAIT:
-    case Tcp_States::TCP_CLOSING:
-    case Tcp_States::TCP_LAST_ACK:
-    case Tcp_States::TCP_TIME_WAIT:
+    case Tcp_State::TCP_CLOSE_WAIT:
+    case Tcp_State::TCP_CLOSING:
+    case Tcp_State::TCP_LAST_ACK:
+    case Tcp_State::TCP_TIME_WAIT:
         /*
          * Invalid State Exception: Remote FIN already received.
          * - Ignore the segment text.
@@ -453,11 +453,11 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
         /*To be implemented:
             tcpsock_dbg("Received in-sequence FIN", sk);
         */
-        switch ((Tcp_States)sk->state)
+        switch ((Tcp_State)sk->state)
         {
-        case Tcp_States::TCP_CLOSE:
-        case Tcp_States::TCP_LISTEN:
-        case Tcp_States::TCP_SYN_SENT:
+        case Tcp_State::TCP_CLOSE:
+        case Tcp_State::TCP_LISTEN:
+        case Tcp_State::TCP_SYN_SENT:
             tcp_drop(sk, skb);
             return 0;
         }
@@ -469,14 +469,14 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
         tcp_send_ack(sk);
         tsk->sk.ops->recv_notify(&tsk->sk);
 
-        switch ((Tcp_States)sk->state)
+        switch ((Tcp_State)sk->state)
         {
-        case Tcp_States::TCP_ESTABLISHED:
-        case Tcp_States::TCP_SYN_RECEIVED:
-            tcp_set_state(sk, (int)Tcp_States::TCP_CLOSE_WAIT);
+        case Tcp_State::TCP_ESTABLISHED:
+        case Tcp_State::TCP_SYN_RECEIVED:
+            tcp_set_state(sk, (int)Tcp_State::TCP_CLOSE_WAIT);
             break;
 
-        case Tcp_States::TCP_FIN_WAIT_1:
+        case Tcp_State::TCP_FIN_WAIT_1:
             /*
              * RFC 793 (FIN-WAIT-1): If our FIN is ACKed:
              * - Enter TIME-WAIT, start time-wait timer, and stop all other timers.
@@ -488,11 +488,11 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
             }
             else
             {
-                tcp_set_state(sk, (int)Tcp_States::TCP_CLOSING);
+                tcp_set_state(sk, (int)Tcp_State::TCP_CLOSING);
             }
             break;
 
-        case Tcp_States::TCP_FIN_WAIT_2:
+        case Tcp_State::TCP_FIN_WAIT_2:
             /*
              * RFC 793: Enter TIME-WAIT state.
              * - Start the time-wait timer.
@@ -501,12 +501,12 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
             tcp_enter_time_wait(sk);
             break;
 
-        case Tcp_States::TCP_CLOSE_WAIT:
-        case Tcp_States::TCP_CLOSING:
-        case Tcp_States::TCP_LAST_ACK:
+        case Tcp_State::TCP_CLOSE_WAIT:
+        case Tcp_State::TCP_CLOSING:
+        case Tcp_State::TCP_LAST_ACK:
             break;
 
-        case Tcp_States::TCP_TIME_WAIT:
+        case Tcp_State::TCP_TIME_WAIT:
             /*To be implemented:
              Dont change state. Restart the 2MSL timer-wait
             */
@@ -514,11 +514,11 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
         }
     }
 
-    switch ((Tcp_States)sk->state)
+    switch ((Tcp_State)sk->state)
     {
-    case Tcp_States::TCP_ESTABLISHED:
-    case Tcp_States::TCP_FIN_WAIT_1:
-    case Tcp_States::TCP_FIN_WAIT_2:
+    case Tcp_State::TCP_ESTABLISHED:
+    case Tcp_State::TCP_FIN_WAIT_1:
+    case Tcp_State::TCP_FIN_WAIT_2:
         if (expected)
         {
             tcp_stop_delack_timer(tsk);

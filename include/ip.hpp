@@ -2,11 +2,7 @@
 #include "syshead.hpp"
 #include "socket_buffer.hpp"
 #include "ethernet.hpp"
-/* To be implemented
 #include "sock.hpp"
-*/
-
-class Sock;
 
 inline constexpr int IPV4 = 0x04;
 inline constexpr int IP_TCP = 0x06;

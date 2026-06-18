@@ -2,15 +2,11 @@
 #include "../include/socket_buffer.hpp"
 #include "../include/ip.hpp"
 #include "../include/ethernet.hpp"
-
-class Sock;
+#include "../include/sock.hpp"
 
 void icmpv4_incoming(SkBuff *skb)
 {
-    /* To be implemented
-    struct iphdr *iphdr = ip_hdr(skb);
-    */
-    Ip_Hdr *iphdr;
+    Ip_Hdr *iphdr = ip_hdr(skb);
 
     ICMPv4 *icmp = reinterpret_cast<ICMPv4 *>(iphdr);
 
@@ -25,12 +21,12 @@ void icmpv4_incoming(SkBuff *skb)
         return;
 
     case ICMP_V4_DEST_UNREACHABLE:
-        print_err("ICMPv4: Destination Unreachable code-{}.\n Please check your routes and firewall rules.", icmp->code);
+        print_err("ERR(icmpv4_incoming): Destination Unreachable code-{}.\n Please check your routes and firewall rules.", icmp->code);
         free_skb(skb);
         return;
 
     default:
-        print_err("ICMPv4: Unsupported type-{}.", icmp->type);
+        print_err("ERR(icmpv4_incoming): Unsupported type-{}.", icmp->type);
         free_skb(skb);
         return;
     }
@@ -38,16 +34,9 @@ void icmpv4_incoming(SkBuff *skb)
 
 void icmpv4_reply(SkBuff *skb)
 {
-    /* To be implemented
-    struct iphdr *iphdr = ip_hdr(skb);
-    */
-    Ip_Hdr *iphdr;
+    Ip_Hdr *iphdr = ip_hdr(skb);
 
-    /*To be implemented
-    struct sock sk;
-    memset(&sk, 0, sizeof(struct sock));
-    */
-    Sock *sk;
+    Sock *sk = new Sock();
 
     uint16_t icmp_len = iphdr->ip_len();
 
@@ -61,13 +50,10 @@ void icmpv4_reply(SkBuff *skb)
     icmp->csum = checksum(icmp, icmp_len, 0);
 
     skb->protocol = ICMPV4;
-    /*To be implemented
-    sk.daddr = ipdhdr->saddr;
-    */
 
-    /*To be implemented
-    ip_output(&sk, skb);
-    */
+    sk->daddr = iphdr->saddr;
+
+    ip_output(sk, skb);
 
     free_skb(skb);
 }

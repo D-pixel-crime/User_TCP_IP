@@ -10,7 +10,7 @@ std::shared_mutex tcp_shared_mutex;
 
 Tcp_Sock::Tcp_Sock() : sackok{1}, rmss{1460}, smss{536}, ofo_queue(IntrusiveQueue<SkBuff>(SkBuff::getOffset__list_node()))
 {
-    sk.state = (int)Tcp_States::TCP_CLOSE;
+    sk.state = (int)Tcp_State::TCP_CLOSE;
 }
 
 Sock *tcp_alloc_sock()
@@ -101,8 +101,8 @@ int tcp_write(Sock *sk, const void *buff, const int &len)
 
     switch (sk->state)
     {
-    case (int)Tcp_States::TCP_ESTABLISHED:
-    case (int)Tcp_States::TCP_CLOSE_WAIT:
+    case (int)Tcp_State::TCP_ESTABLISHED:
+    case (int)Tcp_State::TCP_CLOSE_WAIT:
         break;
 
     default:
@@ -118,26 +118,26 @@ int tcp_read(Sock *sk, const void *buff, const int &len)
     Tcp_Sock *tsk = tcp_sk(sk);
     int ret = -1;
 
-    switch ((Tcp_States)sk->state)
+    switch ((Tcp_State)sk->state)
     {
-    case Tcp_States::TCP_CLOSE:
+    case Tcp_State::TCP_CLOSE:
         return -EBADF;
 
-    case Tcp_States::TCP_LISTEN:
-    case Tcp_States::TCP_SYN_SENT:
-    case Tcp_States::TCP_SYN_RECEIVED:
+    case Tcp_State::TCP_LISTEN:
+    case Tcp_State::TCP_SYN_SENT:
+    case Tcp_State::TCP_SYN_RECEIVED:
         /*
             Queue for requests after entering ESTABLISHED state. If full, return "error: insufficient resources".
         */
-    case Tcp_States::TCP_ESTABLISHED:
-    case Tcp_States::TCP_FIN_WAIT_1:
-    case Tcp_States::TCP_FIN_WAIT_2:
+    case Tcp_State::TCP_ESTABLISHED:
+    case Tcp_State::TCP_FIN_WAIT_1:
+    case Tcp_State::TCP_FIN_WAIT_2:
         /*
             Queue request if incoming segments are insufficient.
         */
         break;
 
-    case Tcp_States::TCP_CLOSE_WAIT:
+    case Tcp_State::TCP_CLOSE_WAIT:
         /*
             If no text is awaiting delivery, return "error: connection closing". Otherwise, satisfy the RECEIVE with any remaining text.
         */
@@ -152,9 +152,9 @@ int tcp_read(Sock *sk, const void *buff, const int &len)
         }
         break;
 
-    case Tcp_States::TCP_CLOSING:
-    case Tcp_States::TCP_LAST_ACK:
-    case Tcp_States::TCP_TIME_WAIT:
+    case Tcp_State::TCP_CLOSING:
+    case Tcp_State::TCP_LAST_ACK:
+    case Tcp_State::TCP_TIME_WAIT:
         return sk->err;
 
     default:
@@ -177,28 +177,28 @@ int tcp_recv_notify(Sock *sk)
 
 int tcp_close(Sock *sk)
 {
-    switch ((Tcp_States)sk->state)
+    switch ((Tcp_State)sk->state)
     {
-    case Tcp_States::TCP_CLOSE:
-    case Tcp_States::TCP_CLOSING:
-    case Tcp_States::TCP_LAST_ACK:
-    case Tcp_States::TCP_TIME_WAIT:
-    case Tcp_States::TCP_FIN_WAIT_1:
-    case Tcp_States::TCP_FIN_WAIT_2:
+    case Tcp_State::TCP_CLOSE:
+    case Tcp_State::TCP_CLOSING:
+    case Tcp_State::TCP_LAST_ACK:
+    case Tcp_State::TCP_TIME_WAIT:
+    case Tcp_State::TCP_FIN_WAIT_1:
+    case Tcp_State::TCP_FIN_WAIT_2:
         sk->err = -EBADF;
         return -1;
 
-    case Tcp_States::TCP_LISTEN:
-    case Tcp_States::TCP_SYN_SENT:
-    case Tcp_States::TCP_SYN_RECEIVED:
+    case Tcp_State::TCP_LISTEN:
+    case Tcp_State::TCP_SYN_SENT:
+    case Tcp_State::TCP_SYN_RECEIVED:
         return tcp_done(sk);
 
-    case Tcp_States::TCP_ESTABLISHED:
-        tcp_set_state(sk, (int)Tcp_States::TCP_FIN_WAIT_1);
+    case Tcp_State::TCP_ESTABLISHED:
+        tcp_set_state(sk, (int)Tcp_State::TCP_FIN_WAIT_1);
         tcp_queue_fin(sk);
         break;
 
-    case Tcp_States::TCP_CLOSE_WAIT:
+    case Tcp_State::TCP_CLOSE_WAIT:
         tcp_queue_fin(sk);
         break;
 
@@ -234,7 +234,7 @@ int tcp_free(Sock *sk)
 int tcp_done(Sock *sk)
 {
 
-    tcp_set_state(sk, (int)Tcp_States::TCP_CLOSING);
+    tcp_set_state(sk, (int)Tcp_State::TCP_CLOSING);
     tcp_free(sk);
     return socket_delete(sk->sock);
 }
@@ -300,16 +300,16 @@ void tcp_handle_fin_state(Sock *sk)
 {
     Tcp_Sock *tsk = tcp_sk(sk);
 
-    switch ((Tcp_States)sk->state)
+    switch ((Tcp_State)sk->state)
     {
-    case Tcp_States::TCP_CLOSE_WAIT:
+    case Tcp_State::TCP_CLOSE_WAIT:
 
-        tcp_set_state(sk, (int)Tcp_States::TCP_LAST_ACK);
+        tcp_set_state(sk, (int)Tcp_State::TCP_LAST_ACK);
         break;
 
-    case Tcp_States::TCP_ESTABLISHED:
+    case Tcp_State::TCP_ESTABLISHED:
 
-        tcp_set_state(sk, (int)Tcp_States::TCP_FIN_WAIT_1);
+        tcp_set_state(sk, (int)Tcp_State::TCP_FIN_WAIT_1);
         break;
     }
 }
@@ -360,7 +360,7 @@ void tcp_enter_time_wait(Sock *sk)
 {
     Tcp_Sock *tsk = tcp_sk(sk);
 
-    tcp_set_state(sk, (int)Tcp_States::TCP_TIME_WAIT);
+    tcp_set_state(sk, (int)Tcp_State::TCP_TIME_WAIT);
 
     tcp_clear_timers(sk);
     tsk->linger = Timer::create(TCP_2MSL, [sk]()
@@ -370,7 +370,7 @@ void tcp_enter_time_wait(Sock *sk)
 void tcp_rearm_user_timeout(Sock *sk)
 {
     Tcp_Sock *tsk = tcp_sk(sk);
-    if (sk->state == (int)Tcp_States::TCP_TIME_WAIT)
+    if (sk->state == (int)Tcp_State::TCP_TIME_WAIT)
     {
         return;
     }
@@ -448,7 +448,7 @@ int tcp_calculate_sacks(Tcp_Sock *tsk)
     return 0;
 }
 
-Net_Ops *tcp_ops = new Net_Ops(
+static Net_Ops tcp_ops(
     [](int protocol) -> Sock *
     {
         return tcp_alloc_sock();

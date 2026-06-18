@@ -3,6 +3,7 @@
 #include "../include/icmp_v4.hpp"
 #include "../include/route.hpp"
 #include "../include/dst.hpp"
+#include "../include/tcp_data.hpp"
 
 int ip_rcv(SkBuff *skb)
 {
@@ -58,9 +59,7 @@ int ip_rcv(SkBuff *skb)
         return 0;
 
     case IP_TCP:
-        /*To be Implemented
-            tcp_in(skb);
-        */
+        tcp_in(skb);
         return 0;
 
     default:
@@ -73,12 +72,9 @@ int ip_rcv(SkBuff *skb)
 
 int ip_output(Sock *sk, SkBuff *skb)
 {
-    Rt_Entry *rt;
     Ip_Hdr *iphdr = ip_hdr(skb);
 
-    /* To be implemented
-     *rt = route_lookup(sk->daddr);
-     */
+    Rt_Entry *rt = route_lookup(sk->daddr);
 
     if (!rt)
     {

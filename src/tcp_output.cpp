@@ -161,7 +161,7 @@ int tcp_queue_transmit_skb(Sock *sk, SkBuff *skb)
 
 int tcp_send_synsack(Sock *sk)
 {
-    if (sk->state != (int)Tcp_States::TCP_SYN_SENT)
+    if (sk->state != (int)Tcp_State::TCP_SYN_SENT)
     {
         print_err("ERR(tcp_send_synsack): Socket not in correct state (SYN_SENT)");
         return 1;
@@ -264,7 +264,7 @@ int tcp_options_len(Sock *sk)
 
 int tcp_send_ack(Sock *sk)
 {
-    if (sk->state == (int)Tcp_States::TCP_CLOSE)
+    if (sk->state == (int)Tcp_State::TCP_CLOSE)
     {
         return 0;
     }
@@ -286,7 +286,7 @@ int tcp_send_ack(Sock *sk)
 
 int tcp_send_syn(Sock *sk)
 {
-    if (sk->state != (int)Tcp_States::TCP_SYN_SENT && sk->state != (int)Tcp_States::TCP_CLOSE && sk->state != (int)Tcp_States::TCP_LISTEN)
+    if (sk->state != (int)Tcp_State::TCP_SYN_SENT && sk->state != (int)Tcp_State::TCP_CLOSE && sk->state != (int)Tcp_State::TCP_LISTEN)
     {
         print_err("ERR(tcp_send_sync): Socket not in correct state (closed or listen)");
         return 1;
@@ -301,7 +301,7 @@ int tcp_send_syn(Sock *sk)
     Tcp_Hdr *tcphdr = tcp_hdr(skb);
 
     tcp_write_syn_options(tcphdr, &opts, tcp_options_len);
-    sk->state = (int)Tcp_States::TCP_SYN_SENT;
+    sk->state = (int)Tcp_State::TCP_SYN_SENT;
     tcphdr->syn = 1;
 
     return tcp_queue_transmit_skb(sk, skb);
@@ -309,7 +309,7 @@ int tcp_send_syn(Sock *sk)
 
 int tcp_send_fin(Sock *sk)
 {
-    if (sk->state == (int)Tcp_States::TCP_CLOSE)
+    if (sk->state == (int)Tcp_State::TCP_CLOSE)
     {
         return 0;
     }
@@ -332,9 +332,9 @@ void tcp_select_initial_window(uint32_t *rcv_wnd)
 
 void tcp_notify_user(Sock *sk)
 {
-    switch ((Tcp_States)sk->state)
+    switch ((Tcp_State)sk->state)
     {
-    case Tcp_States::TCP_CLOSE_WAIT:
+    case Tcp_State::TCP_CLOSE_WAIT:
         /*To be implemented:
             wait_wakeup(&sk->sock->sleep);
         */
@@ -353,7 +353,7 @@ void *tcp_connect_rto(void *arg)
 
         tcp_release_rto_timer(tsk);
 
-        if (sk->state == (int)Tcp_States::TCP_SYN_SENT)
+        if (sk->state == (int)Tcp_State::TCP_SYN_SENT)
         {
             if (tsk->backoff > TCP_CONN_RETRIES)
             {
@@ -448,7 +448,7 @@ void tcp_rearm_rto_timer(Tcp_Sock *tsk)
     Sock *sk = &tsk->sk;
     tcp_release_rto_timer(tsk);
 
-    if (sk->state == (int)Tcp_States::TCP_SYN_SENT)
+    if (sk->state == (int)Tcp_State::TCP_SYN_SENT)
     {
         tsk->retransmit = Timer::create(TCP_SYN_BACKOFF << tsk->backoff, [tsk]()
                                         { tcp_connect_rto(tsk); }, Timer_Type::Trackable);

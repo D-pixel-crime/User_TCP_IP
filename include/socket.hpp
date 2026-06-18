@@ -2,6 +2,7 @@
 #include "sock.hpp"
 #include "syshead.hpp"
 #include "intrusive_queue.hpp"
+#include "ipc.hpp"
 
 inline void socket_dbg(
     const Socket *sock,
@@ -51,6 +52,17 @@ public:
     std::function<int(Socket *sock)> poll;
     std::function<int(Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len)> getpeername;
     std::function<int(Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len)> getsockname;
+
+    Sock_Ops(
+        std::function<int(Socket *sock, const sockaddr *addr, int addrlen, int flags)> _connect,
+        std::function<int(Socket *sock, const void *buff, int len)> _write,
+        std::function<int(Socket *sock, void *buff, int len)> _read,
+        std::function<int(Socket *sock)> _close,
+        std::function<int(Socket *sock)> _free,
+        std::function<int(Socket *sock)> _abort,
+        std::function<int(Socket *sock)> _poll,
+        std::function<int(Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len)> _getpeername,
+        std::function<int(Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len)> _getsockname) : connect(_connect), write(_write), read(_read), close(_close), free(_free), abort(_abort), poll(_poll), getpeername(_getpeername), getsockname(_getsockname) {}
 };
 
 class Socket
@@ -85,12 +97,16 @@ public:
     Net_Ops *net_ops;
     int type;
     int protocol;
+
+    Sock_Type(Sock_Ops *_sock_ops, Net_Ops *_net_ops, const int &_type, const int &_protocol) : sock_ops(_sock_ops), net_ops(_net_ops), type(_type), protocol(_protocol) {}
 };
 
 class Net_Family
 {
 public:
     std::function<int(Socket *sock, int protocl)> create;
+
+    Net_Family(std::function<int(Socket *sock, int protocl)> _create) : create(_create) {}
 };
 
 int socket_rd_acquire(Socket *sock);

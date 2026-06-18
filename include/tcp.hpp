@@ -94,11 +94,11 @@ public:
 };
 
 /**
- * @enum Tcp_States
+ * @enum Tcp_State
  * @brief RFC 793 TCP state machine enumeration.
  * @note Explicitly backed by uint8_t for safe serialization and memory efficiency.
  */
-enum class Tcp_States : uint8_t
+enum class Tcp_State : uint8_t
 {
     /** @brief Invalid, uninitialized, or unknown state. Used for error handling. */
     UNSUPPORTED = 0,

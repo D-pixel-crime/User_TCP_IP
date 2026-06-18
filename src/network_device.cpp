@@ -1,8 +1,9 @@
-#include "../include/network_device.hpp"
 #include "../include/socket_buffer.hpp"
+#include "../include/network_device.hpp"
 #include "../include/ethernet.hpp"
 #include "../include/tuntap_interface.hpp"
 #include "../include/arp.hpp"
+#include "../include/ip.hpp"
 
 extern int running;
 
@@ -55,9 +56,7 @@ int netdev_receive(SkBuff *skb)
         break;
 
     case ETH_P_IP:
-        /* To be implemented
-            ip_rcv(skb);
-        */
+        ip_rcv(skb);
         break;
 
     case ETH_P_IPV6:

@@ -1,5 +1,6 @@
 #include "../include/ipc.hpp"
 #include "../include/socket.hpp"
+#include <sys/stat.h>
 
 inline constexpr int IPC_BUFF_LEN = 8192;
 static int socket_count = 0;
@@ -191,4 +192,369 @@ int ipc_close(const int &sockfd, Ipc_Msg *msg)
     rc = ipc_write_rc(sockfd, pid, IPC_CLOSE, rc);
 
     return rc;
+}
+
+int ipc_poll(const int &sockfd, Ipc_Msg *msg)
+{
+    Ipc_Poll *data = reinterpret_cast<Ipc_Poll *>(msg->data);
+    pid_t pid = msg->pid;
+    int rc = -1;
+
+    pollfd fds[data->nfds];
+
+    for (int i = 0; i < data->nfds; i++)
+    {
+        fds[i].fd = data->fds[i].fd;
+        fds[i].events = data->fds[i].events;
+        fds[i].revents = data->fds[i].revents;
+    }
+
+    rc = _poll(pid, fds, data->nfds, data->timeout);
+
+    int resp_len = sizeof(Ipc_Msg) + sizeof(Ipc_Err) + sizeof(Ipc_Poll_Fd) * data->nfds;
+    Ipc_Msg *response = reinterpret_cast<Ipc_Msg *>(new uint8_t[resp_len]);
+
+    if (!response)
+    {
+        print_err("ERR(ipc_poll): Unable to allocate memory for IPC Write Response.");
+        return -1;
+    }
+
+    response->type = IPC_POLL;
+    response->pid = pid;
+
+    Ipc_Err err;
+
+    if (rc < 0)
+    {
+        err.err = -rc;
+        err.rc = -1;
+    }
+    else
+    {
+        err.err = 0;
+        err.rc = rc;
+    }
+
+    std::memcpy(response->data, &err, sizeof(Ipc_Err));
+
+    Ipc_Poll_Fd *polled = reinterpret_cast<Ipc_Poll_Fd *>(reinterpret_cast<Ipc_Err *>(response->data)->data);
+
+    for (int i = 0; i < data->nfds; i++)
+    {
+        polled[i].fd = fds[i].fd;
+        polled[i].events = fds[i].events;
+        polled[i].revents = fds[i].revents;
+    }
+
+    if (ipc_try_send(sockfd, (char *)response, resp_len) == -1)
+    {
+        throw std::runtime_error("ERR(ipc_err): Error on writing IPC Poll Response");
+    }
+
+    return 0;
+}
+
+int ipc_fcntl(const int &sockfd, Ipc_Msg *msg)
+{
+    Ipc_Fcntl *fc = reinterpret_cast<Ipc_Fcntl *>(msg->data);
+    pid_t pid = msg->pid;
+    int rc = -1;
+
+    switch (fc->cmd)
+    {
+    case F_GETFL:
+        rc = _fcntl(pid, fc->sockfd, fc->cmd);
+        break;
+    case F_SETFL:
+        rc = _fcntl(pid, fc->sockfd, fc->cmd, *(int *)fc->data);
+        break;
+    default:
+        print_err("ERR(ipc_fcntl): IPC Fcntl cmd not supported-{}.", fc->cmd);
+        rc = -EINVAL;
+    }
+
+    return ipc_write_rc(sockfd, pid, IPC_FCNTL, rc);
+}
+
+int ipc_getsockopt(const int &sockfd, Ipc_Msg *msg)
+{
+    Ipc_Sock_Opt *opts = reinterpret_cast<Ipc_Sock_Opt *>(msg->data);
+
+    pid_t pid = msg->pid;
+    int rc = -1;
+
+    rc = _getsockopt(pid, opts->fd, opts->level, opts->optname, opts->optval, &opts->optlen);
+
+    int resp_len = sizeof(Ipc_Msg) + sizeof(Ipc_Err) + sizeof(Ipc_Sock_Opt) + opts->optlen;
+    Ipc_Msg *response = reinterpret_cast<Ipc_Msg *>(new uint8_t[resp_len]);
+
+    if (!response)
+    {
+        print_err("ERR(ip_getsockopt): Unable allocate memory for IPC getsockopt Response.");
+        return -1;
+    }
+
+    response->type = IPC_GETSOCKOPT;
+    response->pid = pid;
+
+    Ipc_Err err;
+
+    if (rc < 0)
+    {
+        err.err = -rc;
+        err.rc = -1;
+    }
+    else
+    {
+        err.err = 0;
+        err.rc = rc;
+    }
+
+    std::memcpy(response->data, &err, sizeof(Ipc_Err));
+
+    Ipc_Sock_Opt *optres = reinterpret_cast<Ipc_Sock_Opt *>(reinterpret_cast<Ipc_Err *>(response->data)->data);
+
+    optres->fd = opts->fd;
+    optres->level = opts->level;
+    optres->optname = opts->optname;
+    optres->optlen = opts->optlen;
+    std::memcpy(&optres->optval, opts->optval, opts->optlen);
+
+    if (ipc_try_send(sockfd, (char *)response, resp_len) == -1)
+    {
+        throw std::runtime_error("ERR(ipc_getsockopt): Error on writing IPC getsockopt Response.");
+    }
+
+    return rc;
+}
+
+int ipc_getpeername(const int &sockfd, Ipc_Msg *msg)
+{
+    Ipc_Sock_Name *name = reinterpret_cast<Ipc_Sock_Name *>(msg->data);
+
+    pid_t pid = msg->pid;
+    int rc = -1;
+
+    int resp_len = sizeof(Ipc_Msg) + sizeof(Ipc_Err) + sizeof(Ipc_Sock_Name);
+    Ipc_Msg *response = reinterpret_cast<Ipc_Msg *>(new uint8_t[resp_len]);
+
+    if (!response)
+    {
+        print_err("ERR(ipc_getpeername): Unable to allocate memory for IPC getpeername Response.");
+        return -1;
+    }
+
+    response->type = IPC_GETPEERNAME;
+    response->pid = pid;
+
+    Ipc_Sock_Name *nameres = reinterpret_cast<Ipc_Sock_Name *>(reinterpret_cast<Ipc_Err *>(response->data)->data);
+    rc = _getpeername(pid, name->socket, (struct sockaddr *)nameres->sa_data, &nameres->address_len);
+
+    Ipc_Err err;
+
+    if (rc < 0)
+    {
+        err.err = -rc;
+        err.rc = -1;
+    }
+    else
+    {
+        err.err = 0;
+        err.rc = rc;
+    }
+
+    std::memcpy(response->data, &err, sizeof(Ipc_Err));
+
+    nameres->socket = name->socket;
+
+    if (ipc_try_send(sockfd, (char *)response, resp_len) == -1)
+    {
+        throw std::runtime_error("ERR(ipc_getpeername): Error on writing IPC getpeername Response.");
+    }
+
+    return rc;
+}
+
+int ipc_getsockname(const int &sockfd, Ipc_Msg *msg)
+{
+    Ipc_Sock_Name *name = reinterpret_cast<Ipc_Sock_Name *>(msg->data);
+
+    pid_t pid = msg->pid;
+    int rc = -1;
+
+    int resp_len = sizeof(Ipc_Msg) + sizeof(Ipc_Err) + sizeof(Ipc_Sock_Name);
+    Ipc_Msg *response = reinterpret_cast<Ipc_Msg *>(new uint8_t[resp_len]);
+
+    if (!response)
+    {
+        print_err("ERR(ipc_getsockname): Unable to allocate memory for IPC getsockname Response.");
+        return -1;
+    }
+
+    response->type = IPC_GETSOCKNAME;
+    response->pid = pid;
+
+    Ipc_Sock_Name *nameres = reinterpret_cast<Ipc_Sock_Name *>(reinterpret_cast<Ipc_Err *>(response->data)->data);
+    rc = _getsockname(pid, name->socket, (struct sockaddr *)nameres->sa_data, &nameres->address_len);
+
+    Ipc_Err err;
+
+    if (rc < 0)
+    {
+        err.err = -rc;
+        err.rc = -1;
+    }
+    else
+    {
+        err.err = 0;
+        err.rc = rc;
+    }
+
+    std::memcpy(response->data, &err, sizeof(Ipc_Err));
+
+    nameres->socket = name->socket;
+
+    if (ipc_try_send(sockfd, (char *)response, resp_len) == -1)
+    {
+        throw std::runtime_error("ERR(ipc_getsockname): Error on writing IPC getsockname Response.");
+    }
+
+    return rc;
+}
+
+int demux_ipc_socket_call(const int &sockfd, uint8_t *cmd_buff, const int &blen)
+{
+    Ipc_Msg *msg = reinterpret_cast<Ipc_Msg *>(cmd_buff);
+
+    switch (msg->type)
+    {
+    case IPC_SOCKET:
+        return ipc_socket(sockfd, msg);
+        break;
+    case IPC_CONNECT:
+        return ipc_connect(sockfd, msg);
+        break;
+    case IPC_WRITE:
+        return ipc_write(sockfd, msg);
+        break;
+    case IPC_READ:
+        return ipc_read(sockfd, msg);
+        break;
+    case IPC_CLOSE:
+        return ipc_close(sockfd, msg);
+        break;
+    case IPC_POLL:
+        return ipc_poll(sockfd, msg);
+        break;
+    case IPC_FCNTL:
+        return ipc_fcntl(sockfd, msg);
+        break;
+    case IPC_GETSOCKOPT:
+        return ipc_getsockopt(sockfd, msg);
+    case IPC_GETPEERNAME:
+        return ipc_getpeername(sockfd, msg);
+    case IPC_GETSOCKNAME:
+        return ipc_getsockname(sockfd, msg);
+    default:
+        print_err("ERR(demux_ipc_socket_call): No such IPC type-{}.", msg->type);
+        break;
+    };
+
+    return 0;
+}
+
+void *socket_ipc_open(void *args)
+{
+    int blen = IPC_BUFF_LEN;
+    uint8_t buf[blen];
+    int sockfd = *reinterpret_cast<int *>(args);
+    int rc = -1;
+
+    while ((rc = read(sockfd, buf, blen)) > 0)
+    {
+        rc = demux_ipc_socket_call(sockfd, buf, blen);
+
+        if (rc == -1)
+        {
+            print_err("ERR(socket_ipc_open): Error on demuxing IPC socket call.");
+            close(sockfd);
+            return NULL;
+        };
+    }
+
+    ipc_free_thread(sockfd);
+
+    if (rc == -1)
+    {
+        throw std::runtime_error("ERR(socket_ipc_open): Socket IPC Read.");
+    }
+
+    return nullptr;
+}
+
+void start_ipc_listener()
+{
+    int fd, rc, datasock;
+    sockaddr_un un;
+    std::string sockname = "/tmp/lvlip.socket";
+
+    unlink(sockname.c_str());
+
+    if (strnlen(sockname.c_str(), sizeof(un.sun_path)) == sizeof(un.sun_path))
+    {
+        print_err("ERR(start_ipc_listener): Path for UNIX socket is too long.");
+        exit(-1);
+    }
+
+    if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+    {
+        throw std::runtime_error("ERR(start_ipc_listener): IPC listener UNIX socket.");
+    }
+
+    memset(&un, 0, sizeof(struct sockaddr_un));
+    un.sun_family = AF_UNIX;
+    std::strncpy(un.sun_path, sockname.c_str(), sizeof(un.sun_path) - 1);
+
+    rc = bind(fd, (const struct sockaddr *)&un, sizeof(struct sockaddr_un));
+
+    if (rc == -1)
+    {
+        throw std::runtime_error("ERR(start_ipc_listener): IPC bind.");
+        exit(EXIT_FAILURE);
+    }
+
+    rc = listen(fd, 20);
+
+    if (rc == -1)
+    {
+        perror("IPC listen");
+        exit(EXIT_FAILURE);
+    }
+
+    if (chmod(sockname.c_str(), S_IRUSR | S_IWUSR | S_IXUSR |
+                                    S_IRGRP | S_IWGRP | S_IXGRP |
+                                    S_IROTH | S_IWOTH | S_IXOTH) == -1)
+    {
+        throw std::runtime_error("ERR(start_ipc_listener): Chmod on lvl-ip IPC UNIX socket failed.");
+    }
+
+    while (true)
+    {
+        datasock = accept(fd, NULL, NULL);
+        if (datasock == -1)
+        {
+            throw std::runtime_error("ERR(start_ipc_listener): IPC accept.");
+            exit(EXIT_FAILURE);
+        }
+
+        Ipc_Thread *ipcth = new Ipc_Thread(datasock);
+
+        std::thread t(socket_ipc_open, &ipcth->sock);
+        ipcth->id = t.get_id();
+        t.detach();
+    }
+
+    close(fd);
+    unlink(sockname.c_str());
 }

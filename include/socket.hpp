@@ -43,7 +43,7 @@ enum class Socket_State : uint8_t
 class Sock_Ops
 {
 public:
-    std::function<int(Socket *sock, const sockaddr *addr, int addrlen, int flags)> connect;
+    std::function<int(Socket *sock, const sockaddr *addr, int addr_len, int flags)> connect;
     std::function<int(Socket *sock, const void *buff, int len)> write;
     std::function<int(Socket *sock, void *buff, int len)> read;
     std::function<int(Socket *sock)> close;
@@ -54,7 +54,7 @@ public:
     std::function<int(Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len)> getsockname;
 
     Sock_Ops(
-        std::function<int(Socket *sock, const sockaddr *addr, int addrlen, int flags)> _connect,
+        std::function<int(Socket *sock, const sockaddr *addr, int addr_len, int flags)> _connect,
         std::function<int(Socket *sock, const void *buff, int len)> _write,
         std::function<int(Socket *sock, void *buff, int len)> _read,
         std::function<int(Socket *sock)> _close,
@@ -132,10 +132,21 @@ Socket *socket_lookup(const uint16_t &remote_port, const uint16_t &local_port);
 
 int _socket(const pid_t &pid, const int &domain, const int &type, const int &protocol);
 
-int _connect(const pid_t &pid, const int &sockfd, const sockaddr *addr, const socklen_t &addrlen);
+int _connect(const pid_t &pid, const int &sockfd, const sockaddr *addr, const socklen_t &addr_len);
 
 int _write(const pid_t &pid, const int &sockfd, const void *buff, const unsigned int &count);
 
 int _read(const pid_t &pid, const int &sockfd, void *buff, const unsigned int &count);
 
 int _close(const pid_t &pid, const int &sockfd);
+
+int _poll(const pid_t &pid, pollfd fds[], const nfds_t &nfds, int timeout);
+
+template <typename... Args>
+int _fcntl(const pid_t &pid, const int &fil_des, const int &cmd, Args... args);
+
+int _getsockopt(const pid_t &pid, const int &fd, const int &level, const int &optname, void *optval, socklen_t *optlen);
+
+int _getpeername(const pid_t &pid, const int &socket, sockaddr *__restrict_arr address, socklen_t *__restrict_arr address_len);
+
+int _getsockname(const pid_t &pid, const int &socket, sockaddr *__restrict_arr address, socklen_t *__restrict_arr address_len);

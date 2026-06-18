@@ -72,7 +72,7 @@ int generate_iss()
     return distrib(gen);
 }
 
-int tcp_v4_connect(Sock *sk, const sockaddr *addr, const int &addrlen, const int &flags)
+int tcp_v4_connect(Sock *sk, const sockaddr *addr, const int &addr_len, const int &flags)
 {
     uint16_t dport = (reinterpret_cast<const sockaddr_in *>(addr))->sin_port;
     uint32_t daddr = (reinterpret_cast<const sockaddr_in *>(addr))->sin_addr.s_addr;

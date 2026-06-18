@@ -212,7 +212,7 @@ uint16_t generate_port();
 
 int generate_iss();
 
-int tcp_v4_connect(Sock *sk, const sockaddr *addr, const int &addrlen, const int &flags);
+int tcp_v4_connect(Sock *sk, const sockaddr *addr, const int &addr_len, const int &flags);
 
 int tcp_disconnect(Sock *sk, const int &flags);
 

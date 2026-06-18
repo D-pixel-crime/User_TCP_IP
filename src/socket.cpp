@@ -205,9 +205,12 @@ void socket_debug()
     list_for_each(sockets_queue.get_queue_list_head(), [&](list_head *pos)
                   {
         Socket *sock = list_entry<Socket>(pos, Socket::getOffset__list_node());
-        socket_rd_acquire(sock);
-        socket_dbg(sock, "");
-        socket_release(sock); });
+        {
+            socket_rd_acquire(sock);
+            socket_dbg(sock, "");
+            socket_release(sock);
+        }
+        return false; });
 }
 
 int _socket(const pid_t &pid, const int &domain, const int &type, const int &protocol)
@@ -252,7 +255,7 @@ int _socket(const pid_t &pid, const int &domain, const int &type, const int &pro
     return fd;
 }
 
-int _connect(const pid_t &pid, const int &sockfd, const sockaddr *addr, const socklen_t &addrlen)
+int _connect(const pid_t &pid, const int &sockfd, const sockaddr *addr, const socklen_t &addr_len)
 {
     Socket *sock;
     if (!(sock = get_socket(pid, sockfd)))
@@ -262,7 +265,7 @@ int _connect(const pid_t &pid, const int &sockfd, const sockaddr *addr, const so
     }
 
     socket_wr_acquire(sock);
-    int rc = sock->ops->connect(sock, addr, addrlen, 0);
+    int rc = sock->ops->connect(sock, addr, addr_len, 0);
     switch (rc)
     {
     case -EINVAL:
@@ -323,6 +326,178 @@ int _close(const pid_t &pid, const int &sockfd)
 
     socket_wr_acquire(sock);
     int rc = sock->ops->close(sock);
+    socket_release(sock);
+
+    return rc;
+}
+
+int _poll(const pid_t &pid, pollfd fds[], const nfds_t &nfds, int timeout)
+{
+    while (true)
+    {
+        int polled = 0;
+        for (int i = 0; i < nfds; i++)
+        {
+            pollfd *poll = &fds[i];
+            Socket *sock = nullptr;
+            if (!(sock = get_socket(pid, poll->fd)))
+            {
+                print_err("ERR(_poll): Unable to find socket-fd-{} for connection-pid-{}.", poll->fd, pid);
+                return -EBADF;
+            }
+            {
+                socket_rd_acquire(sock);
+                poll->revents = sock->sk->poll_events & (poll->events | POLLHUP | POLLERR | POLLNVAL);
+                if (poll->revents > 0)
+                {
+                    polled++;
+                }
+                socket_release(sock);
+            }
+        }
+
+        if (polled > 0 || !timeout)
+        {
+            return polled;
+        }
+
+        if (timeout > 0)
+        {
+            if (timeout > 10)
+            {
+                timeout -= 10;
+            }
+            else
+            {
+                timeout = 0;
+            }
+        }
+        /*To be implemented:
+            usleep(1000 * 10);
+        */
+    }
+
+    return -EAGAIN;
+}
+
+template <typename... Args>
+int _fcntl(const pid_t &pid, const int &fd, const int &cmd, Args... args)
+{
+    Socket *sock = nullptr;
+    if (!(sock = get_socket(pid, fd)))
+    {
+        print_err("ERR(_fcntl): Unable to find socket-fd-{} for connection-pid-{}.", fd, pid);
+        return -EBADF;
+    }
+
+    int rc = 0;
+    {
+        socket_wr_acquire(sock);
+
+        switch (cmd)
+        {
+        case F_GETFL:
+            rc = sock->flags;
+            break;
+
+        case F_SETFL:
+            // Ensure that an argument was actually passed for setting the flags
+            if constexpr (sizeof...(args) > 0)
+            {
+                // Unpack the first argument from the variadic pack
+                sock->flags = [... args = args...](auto first, auto... rest)
+                {
+                    return first;
+                }(args...);
+                rc = 0;
+            }
+            else
+            {
+                rc = -EINVAL; // No flag argument provided
+            }
+            break;
+
+        default:
+            rc = -1; // Or whatever default error code your system expects
+            break;
+        }
+
+        socket_release(sock);
+    }
+
+    return rc;
+}
+
+int _getsockopt(const pid_t &pid, const int &fd, const int &level, const int &optname, void *optval, socklen_t *optlen)
+{
+    Socket *sock = nullptr;
+    if (!(sock = get_socket(pid, fd)))
+    {
+        print_err("ERR(_getsockopt): Unable to find socket-fd-{} for connection-pid-{}.", fd, pid);
+        return -EBADF;
+    }
+
+    int rc = 0;
+    {
+        socket_rd_acquire(sock);
+
+        switch (level)
+        {
+        case SOL_SOCKET:
+            switch (optname)
+            {
+            case SO_ERROR:
+                *optlen = 4;
+                *reinterpret_cast<int *>(optval) = sock->sk->err;
+                rc = 0;
+                break;
+            default:
+                print_err("ERR(_getsockopt): Getsockopt unsupported optname-{}.", optname);
+                rc = -ENOPROTOOPT;
+                break;
+            }
+
+            break;
+        default:
+            print_err("ERR(_getsockopt): Unsupported level-{}.", level);
+            rc = -EINVAL;
+            break;
+        }
+
+        socket_release(sock);
+    }
+
+    return rc;
+}
+
+int _getpeername(const pid_t &pid, const int &socket, sockaddr *__restrict_arr address, socklen_t *__restrict_arr address_len)
+{
+    Socket *sock;
+    if (!(sock = get_socket(pid, socket)))
+    {
+        print_err("ERR(_getpeername): Unable to find socket-fd-{} for connection-fd-{}.", socket, pid);
+        return -EBADF;
+    }
+
+    socket_rd_acquire(sock);
+    int rc = sock->ops->getpeername(sock, address, address_len);
+    socket_release(sock);
+
+    return rc;
+}
+
+int _getsockname(const pid_t &pid, const int &socket, sockaddr *__restrict_arr address, socklen_t *__restrict_arr address_len)
+{
+    Socket *sock;
+
+    if (!(sock = get_socket(pid, socket)))
+    {
+        print_err("ERR(_getsockname): Unable to find socket-fd-{} for connection-fd-{}.", socket, pid);
+        return -EBADF;
+    }
+
+    socket_rd_acquire(sock);
+    int rc = sock->ops->getsockname(sock, address, address_len);
     socket_release(sock);
 
     return rc;

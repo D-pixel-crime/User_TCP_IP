@@ -12,9 +12,9 @@ static Net_Family inet(
     });
 
 static Sock_Ops inet_stream_ops(
-    [](Socket *sock, const sockaddr *addr, int addrlen, int flags) -> int
+    [](Socket *sock, const sockaddr *addr, int addr_len, int flags) -> int
     {
-        return inet_stream_connect(sock, addr, addrlen, flags);
+        return inet_stream_connect(sock, addr, addr_len, flags);
     },
     [](Socket *sock, const void *buff, int len) -> int
     {
@@ -37,13 +37,13 @@ static Sock_Ops inet_stream_ops(
         return inet_abort(sock);
     },
     NULL,
-    [](Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addrlen) -> int
+    [](Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len) -> int
     {
-        return inet_getpeername(sock, addr, addrlen);
+        return inet_getpeername(sock, addr, addr_len);
     },
-    [](Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addrlen) -> int
+    [](Socket *sock, sockaddr *__restrict_arr addr, socklen_t *__restrict_arr addr_len) -> int
     {
-        return inet_getsockname(sock, addr, addrlen);
+        return inet_getsockname(sock, addr, addr_len);
     });
 
 static Sock_Type inet_ops[] = {
@@ -83,11 +83,11 @@ int inet_socket(Socket *sock, const int &protocol)
     return 0;
 }
 
-int inet_stream_connect(Socket *sock, const sockaddr *addr, int addrlen, int flags)
+int inet_stream_connect(Socket *sock, const sockaddr *addr, int addr_len, int flags)
 {
     Sock *sk = sock->sk;
 
-    if (addrlen < sizeof(addr->sa_family))
+    if (addr_len < sizeof(addr->sa_family))
     {
         return -EINVAL;
     }
@@ -116,7 +116,7 @@ int inet_stream_connect(Socket *sock, const sockaddr *addr, int addrlen, int fla
             return sk->err;
         }
 
-        sk->ops->connect(sk, addr, addrlen, flags);
+        sk->ops->connect(sk, addr, addr_len, flags);
         sock->state = Socket_State::SS_CONNECTING;
         sk->err = -EINPROGRESS;
 
@@ -215,7 +215,7 @@ int inet_getpeername(Socket *sock, sockaddr *__restrict_arr address, socklen_t *
     *address_len = sizeof(sockaddr_in);
 
     /*To be implemented:
-        inet_dbg(sock, "geetpeername sin_family %d sin_port %d sin_addr %d addrlen %d",
+        inet_dbg(sock, "geetpeername sin_family %d sin_port %d sin_addr %d addr_len %d",
              res->sin_family, ntohs(res->sin_port), ntohl(res->sin_addr.s_addr), *address_len);
     */
 
@@ -237,7 +237,7 @@ int inet_getsockname(Socket *sock, sockaddr *__restrict_arr address, socklen_t *
     *address_len = sizeof(sockaddr_in);
 
     /*To be implemented:
-        inet_dbg(sock, "getsockname sin_family %d sin_port %d sin_addr %d addrlen %d",
+        inet_dbg(sock, "getsockname sin_family %d sin_port %d sin_addr %d addr_len %d",
              res->sin_family, ntohs(res->sin_port), ntohl(res->sin_addr.s_addr), *address_len);
     */
 

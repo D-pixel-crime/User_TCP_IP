@@ -19,9 +19,7 @@ class Ipc_Thread
 public:
     list_head list_node;
     int sock;
-    /*To be implemented:
-        pthread_t id;
-    */
+    std::thread::id id;
 
     static size_t getOffset__list_node()
     {

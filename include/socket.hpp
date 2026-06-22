@@ -77,9 +77,7 @@ public:
     int flags;
     Sock *sk;
     Sock_Ops *ops;
-    /*To be implemented
-        wait_lock sleep;
-    */
+    Wait_Lock sleep;
     std::shared_mutex lock;
 
     static size_t getOffset__list_node()

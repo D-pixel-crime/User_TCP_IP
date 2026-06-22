@@ -57,12 +57,8 @@ void free_skb(SkBuff *skb)
 
 inline void skb_queue_free(IntrusiveQueue<SkBuff> *queue)
 {
-    SkBuff *skb = nullptr;
-
-    while (skb = queue->queue_first_entry())
-    {
-        queue->dequeue();
+    queue->clear_queue([&](SkBuff *skb)
+                       {
         skb->refcnt--;
-        free_skb(skb);
-    }
+        free_skb(skb); });
 }

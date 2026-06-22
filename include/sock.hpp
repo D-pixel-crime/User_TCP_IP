@@ -2,6 +2,7 @@
 #include "socket.hpp"
 #include "socket_buffer.hpp"
 #include "syshead.hpp"
+#include "wait.hpp"
 
 class Sock;
 
@@ -35,9 +36,7 @@ class Sock
 public:
     Socket *sock;
     Net_Ops *ops;
-    /*To be implemented
-        wait_lock recv_wait;
-    */
+    Wait_Lock recv_wait;
     IntrusiveQueue<SkBuff> receive_queue = IntrusiveQueue<SkBuff>(SkBuff::getOffset__list_node());
     IntrusiveQueue<SkBuff> write_queue = IntrusiveQueue<SkBuff>(SkBuff::getOffset__list_node());
     int protocol;

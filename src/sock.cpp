@@ -31,9 +31,6 @@ void sock_init_data(Socket *sock, Sock *sk)
     sock->sk = sk;
     sk->sock = sock;
 
-    /*To be implemented
-        wait_init(&sk->recv_wait);
-    */
     sk->poll_events = 0;
     sk->ops->init(sk);
 }
@@ -52,7 +49,5 @@ void sock_connected(Sock *sk)
     sk->err = 0;
     sk->poll_events = (POLLOUT | POLLWRNORM | POLLWRBAND);
 
-    /*To be implemented:
-        wait_wakeup(&sock->sleep);
-    */
+    sock->sleep.wakeup();
 }

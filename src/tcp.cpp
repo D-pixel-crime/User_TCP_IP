@@ -166,11 +166,10 @@ int tcp_read(Sock *sk, const void *buff, const int &len)
 
 int tcp_recv_notify(Sock *sk)
 {
-    /* To be implemented
-    if (&(sk->recv_wait)) {
-        return wait_wakeup(&sk->recv_wait);
+    if (&(sk->recv_wait))
+    {
+        return sk->recv_wait.wakeup();
     }
-    */
 
     return -1;
 }
@@ -224,9 +223,7 @@ int tcp_free(Sock *sk)
     Tcp_Sock *tsk = tcp_sk(sk);
     tcp_clear_timers(sk);
     tcp_clear_queues(tsk);
-    /*To be implemented:
-        wait_wakeup(&sk->sock->sleep);
-    */
+    sk->sock->sleep.wakeup();
 
     return 0;
 }

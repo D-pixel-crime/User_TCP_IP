@@ -77,10 +77,8 @@ void timers_tick()
 
         if(t->cancelled && t->expires < tick){
             t->cancelled = 1;
-            /*To be implemented
-                pthread_t th;
-            pthread_create(&th, NULL, t->handler, t->arg);
-            */
+            std::thread th(t->handler);
+            th.detach();
         }
 
         if(t->cancelled && t->refcnt == 0){

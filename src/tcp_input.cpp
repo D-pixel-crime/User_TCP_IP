@@ -584,14 +584,10 @@ int tcp_receive(Tcp_Sock *tsk, void *buff, const int &len)
         }
         else
         {
-            /*To be implemented:
-                pthread_mutex_lock(&tsk->sk.recv_wait.lock);
-            */
+            tsk->sk.recv_wait.lock.lock();
             socket_release(sock);
-            /*To be implemented:
-             wait_sleep(&tsk->sk.recv_wait);
-             pthread_mutex_unlock(&tsk->sk.recv_wait.lock);
-            */
+            tsk->sk.recv_wait.sleep();
+            tsk->sk.recv_wait.lock.unlock();
             socket_wr_acquire(sock);
         }
     }

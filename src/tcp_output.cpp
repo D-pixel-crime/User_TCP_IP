@@ -335,9 +335,7 @@ void tcp_notify_user(Sock *sk)
     switch ((Tcp_State)sk->state)
     {
     case Tcp_State::TCP_CLOSE_WAIT:
-        /*To be implemented:
-            wait_wakeup(&sk->sock->sleep);
-        */
+        sk->sock->sleep.wakeup();
         break;
     }
 }

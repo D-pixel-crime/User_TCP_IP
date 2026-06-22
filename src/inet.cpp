@@ -130,9 +130,7 @@ int inet_stream_connect(Socket *sock, const sockaddr *addr, int addr_len, int fl
             while (sock->state == Socket_State::SS_CONNECTING && sk->err == -EINPROGRESS)
             {
                 socket_release(sock);
-                /*To be implemented:
-                    wait_sleep(&sock->sleep);
-                */
+                sock->sleep.sleep();
                 socket_wr_acquire(sock);
             }
         }

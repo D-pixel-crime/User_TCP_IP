@@ -26,10 +26,6 @@ Socket::Socket(pid_t _pid) : fd{4097}, pid{1}, refCnt{1}
     state = Socket_State::SS_UNCONNECTED;
     ops = nullptr;
     flags = O_RDWR;
-
-    /*To be implemened
-        wait_init(&sock->lock);
-    */
 }
 
 int socket_rd_acquire(Socket *sock)
@@ -96,9 +92,6 @@ int socket_free(Socket *sock)
         sock->ops->free(sock);
     }
 
-    /*To be implemented
-        wait_free(&sock->sleep);
-    */
     socket_release(sock);
 }
 

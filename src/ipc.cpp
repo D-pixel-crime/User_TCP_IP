@@ -80,7 +80,7 @@ int ipc_write_rc(const int &sockfd, const pid_t &pid, const uint16_t &type, int 
 
     if (ipc_try_send(sockfd, reinterpret_cast<uint8_t *>(response), resp_len) == -1)
     {
-        throw std::runtime_error("ERR(ipc_write_rc): Error on writing IPC Write Response.");
+        throw std::runtime_error("ERR(ipc_try_send from ipc_write_rc): Error on writing IPC Write Response.");
         return -1;
     }
 

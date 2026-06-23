@@ -202,17 +202,8 @@ uint8_t *arp_get_hwaddr(const uint32_t &sip)
     return hwaddr;
 }
 
-/*To be implemented
 void free_arp()
 {
-    struct list_head *item, *tmp;
-    struct arp_cache_entry *entry;
-
-    list_for_each_safe(item, tmp, &arp_cache) {
-        entry = list_entry(item, struct arp_cache_entry, list);
-        list_del(item);
-
-        free(entry);
-    }
+    arp_cache_entry_queue.clear_queue([](Arp_Cache_Entry *entry)
+                                      { delete entry; });
 }
-*/

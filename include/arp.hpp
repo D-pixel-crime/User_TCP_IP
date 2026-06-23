@@ -116,10 +116,6 @@ inline Arp_Hdr *arp_hdr(SkBuff *skb)
     return reinterpret_cast<Arp_Hdr *>(skb->head + Eth_Hdr::getSize());
 }
 
-/* To be implemented
-void free_arp();
-*/
-
 void arp_rcv(SkBuff *skb);
 
 int arp_request(const uint32_t &sip, const uint32_t &dip, Network_Device *netdev);
@@ -127,3 +123,5 @@ int arp_request(const uint32_t &sip, const uint32_t &dip, Network_Device *netdev
 void arp_reply(SkBuff *skb, Network_Device *netdev);
 
 uint8_t *arp_get_hwaddr(const uint32_t &sip);
+
+void free_arp();

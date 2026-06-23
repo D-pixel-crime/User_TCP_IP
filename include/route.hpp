@@ -31,6 +31,4 @@ void init_routes();
 
 Rt_Entry *route_lookup(const uint32_t &_destAddr);
 
-/* To be implemented
 void free_routes();
- */

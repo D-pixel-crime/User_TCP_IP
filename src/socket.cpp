@@ -15,6 +15,20 @@ std::vector<Net_Family *> families = []()
     return temp;
 }(); // Immediately-executing lambda
 
+void socket_debug()
+{
+    {
+        std::shared_lock<std::shared_mutex> rd_lock(rw_mutex);
+
+        list_for_each(sockets_queue.get_queue_list_head(), [&](list_head *pos)
+                      {
+            Socket *sock = list_entry<Socket>(pos, Socket::getOffset__list_node());
+            socket_rd_acquire(sock);
+            socket_dbg(sock, "");
+            socket_release(sock); });
+    }
+}
+
 /* Figure out a way to not shadow kernel file descriptors. */
 Socket::Socket(pid_t _pid) : fd{4097}, pid{1}, refCnt{1}
 {
@@ -365,9 +379,7 @@ int _poll(const pid_t &pid, pollfd fds[], const nfds_t &nfds, int timeout)
                 timeout = 0;
             }
         }
-        /*To be implemented:
-            usleep(1000 * 10);
-        */
+        std::this_thread::sleep_for(std::chrono::microseconds(10000));
     }
 
     return -EAGAIN;

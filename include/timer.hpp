@@ -34,6 +34,8 @@ public:
     void cancel();
 };
 
+void timer_debug();
+
 int timer_get_tick();
 
 void timer_free(Timer *t);

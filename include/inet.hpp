@@ -3,6 +3,12 @@
 #include "socket.hpp"
 #include "syshead.hpp"
 
+inline void inet_dbg(const Socket *sock, std::string_view msg,
+                     std::source_location loc = std::source_location::current())
+{
+  socket_dbg(sock, msg, loc);
+}
+
 int inet_create(Socket *sock, const int &protocol);
 
 int inet_socket(Socket *sock, const int &protocol);

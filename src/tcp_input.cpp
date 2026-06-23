@@ -109,9 +109,7 @@ int tcp_verify_segment(Tcp_Sock *tsk, Tcp_Hdr *tcphdr, SkBuff *skb)
 
     if (tcphdr->seq < tcb->rcv_nxt || tcphdr->seq > (tcb->rcv_nxt + tcb->rcv_wnd))
     {
-        /*To be implemented:
-            tcpsock_dbg("Received invalid segment", (&tsk->sk));
-        */
+        tcpsock_dbg("Received invalid segment", (&tsk->sk));
         return 0;
     }
 
@@ -160,17 +158,13 @@ int tcp_synsent(Tcp_Sock *tsk, SkBuff *skb, Tcp_Hdr *tcphdr)
     Tcb *tcb = &tsk->tcb;
     Sock *sk = &tsk->sk;
 
-    /*To be implemented:
-        tcpsock_dbg("state is synsent", sk);
-    */
+    tcpsock_dbg("state is synsent", sk);
 
     if (tcphdr->ack)
     {
         if (tcphdr->ack_seq <= tcb->iss || tcphdr->ack_seq > tcb->snd_nxt)
         {
-            /*To be implemented:
-                tcpsock_dbg("ACK is unacceptable", sk);
-            */
+            tcpsock_dbg("ACK is unacceptable", sk);
             if (!tcphdr->rst)
             {
                 /*To be implemented:
@@ -180,8 +174,8 @@ int tcp_synsent(Tcp_Sock *tsk, SkBuff *skb, Tcp_Hdr *tcphdr)
         }
         if (tcphdr->ack_seq < tcb->snd_una || tcphdr->ack_seq > tcb->snd_nxt)
         {
+            tcpsock_dbg("ACK is unacceptable", sk);
             /*To be implemented:
-                tcpsock_dbg("ACK is unacceptable", sk);
                 Reset Behaviour
             */
         }
@@ -247,9 +241,7 @@ int tcp_closed(Tcp_Sock *tsk, SkBuff *skb, Tcp_Hdr *tcphdr)
      * - ACK on:  <SEQ=SEG.ACK><CTL=RST>
      */
 
-    /*To be implemented:
-        tcpsock_dbg("state is closed", (&tsk->sk));
-    */
+    tcpsock_dbg("state is closed", (&tsk->sk));
 
     if (tcphdr->rst)
     {
@@ -267,9 +259,7 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
     Tcp_Sock *tsk = tcp_sk(sk);
     Tcb *tcb = &tsk->tcb;
 
-    /*To be implemented:
-        tcpsock_dbg("input state", sk);
-    */
+    tcpsock_dbg("input state", sk);
 
     switch ((Tcp_State)sk->state)
     {
@@ -407,9 +397,7 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
              */
             if (tcb->rcv_nxt == tcphdr->seq)
             {
-                /*To be implemented:
-                    tcpsock_dbg("Remote FIN retransmitted?", sk);
-                */
+                tcpsock_dbg("Remote FIN retransmitted?", sk);
                 tsk->flags |= TCP_FIN;
                 tcp_send_ack(sk);
             }
@@ -450,9 +438,7 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
 
     if (tcphdr->fin && expected)
     {
-        /*To be implemented:
-            tcpsock_dbg("Received in-sequence FIN", sk);
-        */
+        tcpsock_dbg("Received in-sequence FIN", sk);
         switch ((Tcp_State)sk->state)
         {
         case Tcp_State::TCP_CLOSE:
@@ -508,7 +494,7 @@ int tcp_input_state(Sock *sk, Tcp_Hdr *tcphdr, SkBuff *skb)
 
         case Tcp_State::TCP_TIME_WAIT:
             /*To be implemented:
-             Dont change state. Restart the 2MSL timer-wait
+                Dont change state. Restart the 2MSL timer-wait
             */
             break;
         }

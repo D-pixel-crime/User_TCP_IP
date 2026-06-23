@@ -111,9 +111,7 @@ int tcp_transmit_skb(Sock *sk, SkBuff *skb, const uint32_t &seq)
         tcp_write_options(tsk, tcphdr);
     }
 
-    /*To be implemented:
-        tcp_out_dbg(tcphdr, sk, skb);
-    */
+    tcp_out_dbg(tcphdr, sk, skb);
 
     tcphdr->sport = htons(tcphdr->sport);
     tcphdr->dport = htons(tcphdr->dport);
@@ -398,9 +396,7 @@ void *tcp_retransmission_timeout(void *arg)
     if (!skb)
     {
         tsk->backoff = 0;
-        /*To be implemented:
-            tcpsock_dbg("TCP RTO queue empty, notifying user", sk);
-        */
+        tcpsock_dbg("TCP RTO queue empty, notifying user", sk);
         tcp_notify_user(sk);
         socket_release(sk->sock);
         return nullptr;
@@ -547,11 +543,8 @@ int tcp_queue_fin(Sock *sk)
     tcphdr->fin = 1;
     tcphdr->ack = 1;
 
-    int rc;
-    /*To be implemented:
-        tcpsock_dbg("Queueing fin", sk);
-    */
-    rc = tcp_queue_transmit_skb(sk, skb);
+    int rc = tcp_queue_transmit_skb(sk, skb);
+    tcpsock_dbg("Queueing fin", sk);
 
     return rc;
 }

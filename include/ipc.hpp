@@ -2,6 +2,13 @@
 #include "intrusive_queue.hpp"
 #include "syshead.hpp"
 
+class Ipc_Thread;
+
+inline void ipc_dbg(std::string_view msg, Ipc_Thread *ipcth)
+{
+    print_debug(std::format("IPC sockets count-{}, current sock-{}, tid {}: {}", socket_count, ipcth->sock, ipcth->id, msg));
+}
+
 inline constexpr int IPC_SOCKET = 0x0001;
 inline constexpr int IPC_CONNECT = 0x0002;
 inline constexpr int IPC_WRITE = 0x0003;

@@ -7,6 +7,74 @@
 #include "timer.hpp"
 #include "sock.hpp"
 
+class Tcp_Hdr;
+
+inline constexpr std::array<const std::string_view, 11> tcp_dbg_states = {
+    "TCP_LISTEN",
+    "TCP_SYN_SENT",
+    "TCP_SYN_RECEIVED",
+    "TCP_ESTABLISHED",
+    "TCP_FIN_WAIT_1",
+    "TCP_FIN_WAIT_2",
+    "TCP_CLOSE",
+    "TCP_CLOSE_WAIT",
+    "TCP_CLOSING",
+    "TCP_LAST_ACK",
+    "TCP_TIME_WAIT",
+};
+
+inline void tcp_in_dbg(Tcp_Hdr *tcphdr, Sock *sk, SkBuff *skb)
+{
+    print_debug(std::format(
+        "TCP {}.{}.{}.{}.{} > {}.{}.{}.{}.{}: Flags [S{}A{}P{}F{}R{}], seq {}:{}, ack {}, win {} rto {} boff {}",
+        static_cast<uint8_t>(sk->daddr >> 24), static_cast<uint8_t>(sk->daddr >> 16),
+        static_cast<uint8_t>(sk->daddr >> 8), static_cast<uint8_t>(sk->daddr >> 0), sk->dport,
+        static_cast<uint8_t>(sk->saddr >> 24), static_cast<uint8_t>(sk->saddr >> 16),
+        static_cast<uint8_t>(sk->saddr >> 8), static_cast<uint8_t>(sk->saddr >> 0), sk->sport,
+        static_cast<uint8_t>(tcphdr->syn), static_cast<uint8_t>(tcphdr->ack),
+        static_cast<uint8_t>(tcphdr->psh), static_cast<uint8_t>(tcphdr->fin),
+        static_cast<uint8_t>(tcphdr->rst),
+        tcphdr->seq - tcp_sk(sk)->tcb.irs,
+        tcphdr->seq + skb->data_len - tcp_sk(sk)->tcb.irs,
+        tcphdr->ack_seq - tcp_sk(sk)->tcb.iss, tcphdr->win,
+        tcp_sk(sk)->rto, tcp_sk(sk)->backoff));
+}
+
+inline void tcp_out_dbg(Tcp_Hdr *tcphdr, Sock *sk, SkBuff *skb)
+{
+    print_debug(std::format(
+        "TCP {}.{}.{}.{}.{} > {}.{}.{}.{}.{}: Flags [S{}A{}P{}F{}R{}], seq {}:{}, ack {}, win {} rto {} boff {}",
+        static_cast<uint8_t>(sk->saddr >> 24), static_cast<uint8_t>(sk->saddr >> 16),
+        static_cast<uint8_t>(sk->saddr >> 8), static_cast<uint8_t>(sk->saddr >> 0), sk->sport,
+        static_cast<uint8_t>(sk->daddr >> 24), static_cast<uint8_t>(sk->daddr >> 16),
+        static_cast<uint8_t>(sk->daddr >> 8), static_cast<uint8_t>(sk->daddr >> 0), sk->dport,
+        static_cast<uint8_t>(tcphdr->syn), static_cast<uint8_t>(tcphdr->ack),
+        static_cast<uint8_t>(tcphdr->psh), static_cast<uint8_t>(tcphdr->fin),
+        static_cast<uint8_t>(tcphdr->rst),
+        tcphdr->seq - tcp_sk(sk)->tcb.iss,
+        tcphdr->seq + skb->data_len - tcp_sk(sk)->tcb.iss,
+        tcphdr->ack_seq - tcp_sk(sk)->tcb.irs, tcphdr->win,
+        tcp_sk(sk)->rto, tcp_sk(sk)->backoff));
+}
+
+inline void tcpsock_dbg(std::string_view msg, Sock *sk)
+{
+    print_debug(std::format(
+        "TCP x:{} > {}.{}.{}.{}.{} (snd_una {}, snd_nxt {}, snd_wnd {}, "
+        "snd_wl1 {}, snd_wl2 {}, rcv_nxt {}, rcv_wnd {} recv-q {} send-q {} "
+        "rto {} boff {}) state {}: {}",
+        sk->sport,
+        static_cast<uint8_t>(sk->daddr >> 24), static_cast<uint8_t>(sk->daddr >> 16),
+        static_cast<uint8_t>(sk->daddr >> 8), static_cast<uint8_t>(sk->daddr >> 0), sk->dport,
+        tcp_sk(sk)->tcb.snd_una - tcp_sk(sk)->tcb.iss,
+        tcp_sk(sk)->tcb.snd_nxt - tcp_sk(sk)->tcb.iss, tcp_sk(sk)->tcb.snd_wnd,
+        tcp_sk(sk)->tcb.snd_wl1, tcp_sk(sk)->tcb.snd_wl2,
+        tcp_sk(sk)->tcb.rcv_nxt - tcp_sk(sk)->tcb.irs, tcp_sk(sk)->tcb.rcv_wnd,
+        sk->receive_queue.size(), sk->write_queue.size(),
+        tcp_sk(sk)->rto, tcp_sk(sk)->backoff,
+        tcp_dbg_states[sk->state], msg));
+}
+
 inline constexpr int TCP_FIN = 0x01;
 inline constexpr int TCP_SYN = 0x02;
 inline constexpr int TCP_RST = 0x04;
@@ -100,9 +168,6 @@ public:
  */
 enum class Tcp_State : uint8_t
 {
-    /** @brief Invalid, uninitialized, or unknown state. Used for error handling. */
-    UNSUPPORTED = 0,
-
     /** @brief Passive open; waiting for an incoming connection request. */
     TCP_LISTEN,
 

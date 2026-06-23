@@ -1,9 +1,25 @@
 #include "../include/timer.hpp"
+#include "../include/socket.hpp"
 
 std::shared_mutex rw_mutex;
 std::mutex norm_mutex;
 IntrusiveQueue<Timer> timers_queue(Timer::getOffset__list_node());
 int tick = 0;
+
+void timer_debug()
+{
+    int cnt = 0;
+    {
+        std::lock_guard<std::mutex> lock(norm_mutex);
+
+        list_for_each(timers_queue.get_queue_list_head(), [&](list_head *pos)
+                      {
+            cnt++;
+            return false; });
+    }
+
+    print_debug(std::format("TIMERS: Total amount currently - {}.", cnt));
+}
 
 int timer_get_tick()
 {
@@ -92,11 +108,14 @@ void *timers_start()
 {
     while (true)
     {
-        /* To be implemented
-        if (usleep(10000) != 0) {
-            perror("Timer usleep");
+        try
+        {
+            std::this_thread::sleep_for(std::chrono::microseconds(10000));
         }
-        */
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << '\n';
+        }
 
         {
             std::unique_lock<std::shared_mutex> wr_lock(rw_mutex);
@@ -106,10 +125,8 @@ void *timers_start()
 
         if (tick % 5000 == 0)
         {
-            /*To be implemented
-                socket_debug();
-                timer_debug();
-            */
+            socket_debug();
+            timer_debug();
         }
     }
 }

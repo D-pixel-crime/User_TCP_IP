@@ -51,7 +51,7 @@ int run_cmd(std::string_view fmt, Args &&...args)
 
         if (debug)
         {
-            print_debug("Running command: {}", cmd);
+            print_debug(std::format("Running command: {}", cmd));
         }
 
         return system(cmd.c_str());
@@ -70,13 +70,10 @@ int run_cmd(std::string_view fmt, Args &&...args)
 
 /**
  * Prints a formatted debug message with source location information.
- * * @tparam 'Args' Variadic template parameter pack to handle any number/type of arguments.
- * @param fmt 'std::format_string' checks at COMPILE-TIME that the format string is valid for the provided arguments.
  */
-template <typename... Args>
-inline void print_debug(std::format_string<Args...> fmt, Args &&...args, const std::source_location loc = std::source_location::current())
+inline void print_debug(std::string_view msg, const std::source_location loc = std::source_location::current())
 {
-    std::cout << std::format(fmt, std::forward<Args>(args)...) << std::format(" - {}:{}\n", loc.file_name(), loc.line()) << std::endl;
+    std::cout << msg << " " << std::format(" - {}:{}\n", loc.file_name(), loc.line()) << std::endl;
 }
 
 template <typename... Args>

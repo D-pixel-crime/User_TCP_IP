@@ -2,6 +2,7 @@
 #include "../include/sock.hpp"
 #include "../include/socket.hpp"
 #include "../include/timer.hpp"
+#include "../include/inet.hpp"
 
 static std::random_device rd;
 static std::mt19937 gen(rd());
@@ -319,9 +320,7 @@ void *tcp_linger(void *arg)
         socket_wr_acquire(sk->sock);
 
         Tcp_Sock *tsk = tcp_sk(sk);
-        /*To be implemented:
-            tcpsock_dbg("TCP time-wait timeout, freeing TCB", sk);
-        */
+        tcpsock_dbg("TCP time-wait timeout, freeing TCB", sk);
         tsk->linger->cancel();
         tsk->linger = nullptr;
         tcp_done(sk);
@@ -340,9 +339,7 @@ void *tcp_user_timeout(void *arg)
         socket_wr_acquire(sk->sock);
 
         Tcp_Sock *tsk = tcp_sk(sk);
-        /*To be implemented:
-            tcpsock_dbg("TCP user timeout, freeing TCB and aborting conn", sk);
-        */
+        tcpsock_dbg("TCP user timeout, freeing TCB and aborting conn", sk);
         tsk->linger->cancel();
         tsk->linger = nullptr;
         tcp_abort(sk);
@@ -511,10 +508,7 @@ void tcp_in(SkBuff *skb)
     Tcp_Hdr *tcphdr = tcp_hdr(skb);
     tcp_init_segment(tcphdr, iphdr, skb);
 
-    Sock *sk;
-    /*To be implemented:
-        Sock *sk = inet_lookup(skb, tcphdr->sport, tcphdr->dport);
-    */
+    Sock *sk = inet_lookup(skb, tcphdr->sport, tcphdr->dport);
 
     if (!sk)
     {
@@ -526,9 +520,7 @@ void tcp_in(SkBuff *skb)
     {
         socket_wr_acquire(sk->sock);
 
-        /*To be implemented:
-            tcp_in_dbg(th, sk, skb);
-        */
+        tcp_in_dbg(tcphdr, sk, skb);
         tcp_input_state(sk, tcphdr, skb);
 
         socket_release(sk->sock);

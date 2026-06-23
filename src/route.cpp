@@ -34,3 +34,9 @@ Rt_Entry *route_lookup(const uint32_t &_destAddr)
 
     return toRet;
 }
+
+void free_routes()
+{
+    rtEntry_queue.clear_queue([](Rt_Entry *entry)
+                              { delete entry; });
+}

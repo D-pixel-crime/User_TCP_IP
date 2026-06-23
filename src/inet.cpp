@@ -212,10 +212,8 @@ int inet_getpeername(Socket *sock, sockaddr *__restrict_arr address, socklen_t *
     res->sin_addr.s_addr = htonl(sk->daddr);
     *address_len = sizeof(sockaddr_in);
 
-    /*To be implemented:
-        inet_dbg(sock, "geetpeername sin_family %d sin_port %d sin_addr %d addr_len %d",
-             res->sin_family, ntohs(res->sin_port), ntohl(res->sin_addr.s_addr), *address_len);
-    */
+    inet_dbg(sock, std::format("getpeername sin_family-{} sin_port-{} sin_addr-{} addr_len-{}",
+                               res->sin_family, ntohs(res->sin_port), ntohl(res->sin_addr.s_addr), *address_len));
 
     return 0;
 }
@@ -234,10 +232,8 @@ int inet_getsockname(Socket *sock, sockaddr *__restrict_arr address, socklen_t *
     res->sin_addr.s_addr = htonl(sk->saddr);
     *address_len = sizeof(sockaddr_in);
 
-    /*To be implemented:
-        inet_dbg(sock, "getsockname sin_family %d sin_port %d sin_addr %d addr_len %d",
-             res->sin_family, ntohs(res->sin_port), ntohl(res->sin_addr.s_addr), *address_len);
-    */
+    inet_dbg(sock, std::format("getpeername sin_family-{} sin_port-{} sin_addr-{} addr_len-{}",
+                               res->sin_family, ntohs(res->sin_port), ntohl(res->sin_addr.s_addr), *address_len));
 
     return 0;
 }

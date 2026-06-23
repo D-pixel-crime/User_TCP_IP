@@ -15,9 +15,7 @@ Ipc_Thread::Ipc_Thread(const int &_sock) : sock(_sock)
         socket_count++;
     }
 
-    /*To be implemented:
-        ipc_dbg("New IPC socket allocated", th);
-    */
+    ipc_dbg("New IPC socket allocated.", this);
 }
 
 void ipc_free_thread(const int &sock)
@@ -31,13 +29,11 @@ void ipc_free_thread(const int &sock)
 
             if(ipcth->sock == sock){
                 sockets_queue.queue_del(&ipcth->list_node);
-                /*To be implemented:
-                    ipc_dbg("IPC socket deleted", th);
-                */
-               close(ipcth->sock);
-               delete ipcth;
-               socket_count--;
-               return true;
+                ipc_dbg("IPC socket deleted", ipcth);
+                close(ipcth->sock);
+                delete ipcth;
+                socket_count--;
+                return true;
             }
 
             return false; });
@@ -497,11 +493,11 @@ void start_ipc_listener()
 {
     int fd, rc, datasock;
     sockaddr_un un;
-    std::string sockname = "/tmp/lvlip.socket";
+    constexpr char sockname[] = "/tmp/lvlip.socket";
 
-    unlink(sockname.c_str());
+    unlink(sockname);
 
-    if (strnlen(sockname.c_str(), sizeof(un.sun_path)) == sizeof(un.sun_path))
+    if (strnlen(sockname, sizeof(un.sun_path)) == sizeof(un.sun_path))
     {
         print_err("ERR(start_ipc_listener): Path for UNIX socket is too long.");
         exit(-1);
@@ -514,7 +510,7 @@ void start_ipc_listener()
 
     memset(&un, 0, sizeof(struct sockaddr_un));
     un.sun_family = AF_UNIX;
-    std::strncpy(un.sun_path, sockname.c_str(), sizeof(un.sun_path) - 1);
+    std::strncpy(un.sun_path, sockname, sizeof(un.sun_path) - 1);
 
     rc = bind(fd, (const struct sockaddr *)&un, sizeof(struct sockaddr_un));
 
@@ -532,9 +528,9 @@ void start_ipc_listener()
         exit(EXIT_FAILURE);
     }
 
-    if (chmod(sockname.c_str(), S_IRUSR | S_IWUSR | S_IXUSR |
-                                    S_IRGRP | S_IWGRP | S_IXGRP |
-                                    S_IROTH | S_IWOTH | S_IXOTH) == -1)
+    if (chmod(sockname, S_IRUSR | S_IWUSR | S_IXUSR |
+                            S_IRGRP | S_IWGRP | S_IXGRP |
+                            S_IROTH | S_IWOTH | S_IXOTH) == -1)
     {
         throw std::runtime_error("ERR(start_ipc_listener): Chmod on lvl-ip IPC UNIX socket failed.");
     }
@@ -556,5 +552,5 @@ void start_ipc_listener()
     }
 
     close(fd);
-    unlink(sockname.c_str());
+    unlink(sockname);
 }

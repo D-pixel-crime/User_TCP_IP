@@ -1,6 +1,6 @@
 #pragma once
-#include "syshead.hpp"
 #include "socket_buffer.hpp"
+#include "system_headers.hpp" // IWYU pragma: keep
 
 inline constexpr int ICMP_V4_REPLY = 0x00;
 inline constexpr int ICMP_V4_DEST_UNREACHABLE = 0x03;
@@ -11,30 +11,27 @@ inline constexpr int ICMP_V4_ROUTER_SOL = 0x0a;
 inline constexpr int ICMP_V4_ROUTER_TIMEOUT = 0x0b;
 inline constexpr int ICMP_V4_ROUTER_MALFORMED = 0x0c;
 
-class __attribute__((packed)) ICMPv4
-{
+class __attribute__((packed)) ICMPv4 {
 public:
-    uint8_t type;
-    uint8_t code;
-    uint16_t csum;
-    uint8_t data[];
+  uint8_t type;
+  uint8_t code;
+  uint16_t csum;
+  uint8_t data[];
 };
 
-class __attribute__((packed)) ICMPv4_Echo
-{
+class __attribute__((packed)) ICMPv4_Echo {
 public:
-    uint16_t id;
-    uint16_t seq;
-    uint8_t data[];
+  uint16_t id;
+  uint16_t seq;
+  uint8_t data[];
 };
 
-class __attribute__((packed)) ICMPv4_Dest_Unreachable
-{
+class __attribute__((packed)) ICMPv4_Dest_Unreachable {
 public:
-    uint8_t unused;
-    uint8_t len;
-    uint16_t var;
-    uint8_t data[];
+  uint8_t unused;
+  uint8_t len;
+  uint16_t var;
+  uint8_t data[];
 };
 
 void icmpv4_incoming(SkBuff *skb);

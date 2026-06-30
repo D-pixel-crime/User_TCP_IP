@@ -1,34 +1,30 @@
-#include "syshead.hpp"
+#include "system_headers.hpp" // IWYU pragma: keep
 
-class Wait_Lock
-{
+class Wait_Lock {
 public:
-    std::mutex lock;
-    std::condition_variable ready;
-    uint8_t sleeping = 0;
+  std::mutex lock;
+  std::condition_variable ready;
+  bool sleeping = 0;
 
-    Wait_Lock() = default;
+  Wait_Lock() = default;
 
-    int sleep()
-    {
-        std::unique_lock<std::mutex> _lock(lock);
+  int sleep() {
+    std::unique_lock<std::mutex> _lock(lock);
 
-        sleeping = 1;
+    sleeping = 1;
 
-        ready.wait(_lock, [this]()
-                   { return !sleeping; });
+    ready.wait(_lock, [this]() { return !sleeping; });
 
-        return 0;
-    }
+    return 0;
+  }
 
-    int wakeup()
-    {
-        std::unique_lock<std::mutex> _lock(lock);
+  int wakeup() {
+    std::unique_lock<std::mutex> _lock(lock);
 
-        sleeping = 0;
+    sleeping = 0;
 
-        ready.notify_one();
+    ready.notify_one();
 
-        return 0;
-    }
+    return 0;
+  }
 };

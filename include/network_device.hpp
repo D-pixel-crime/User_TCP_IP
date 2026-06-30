@@ -1,29 +1,34 @@
 #pragma once
-#include "socket_buffer.hpp"
-#include "syshead.hpp"
-#include "utils.hpp"
+#include <source_location>
+#include <system_headers.hpp> // IWYU pragma: keep
+
+class SkBuff;
 
 inline constexpr size_t BUFFLEN = 1600;
 inline constexpr size_t MAX_ADDR_LEN = 32;
 
 /**
- * Prints a formatted debug message specific to network devices with source location information.
+ * Prints a formatted debug message specific to network devices with source
+ * location information.
  */
 template <typename... Args>
-inline void netdev_debug(std::format_string<Args...> fmt, Args &&...args, const std::source_location loc = std::source_location::current())
-{
-    std::cout << std::format(fmt, std::forward<Args>(args)...) << std::format(" - {}:{}\n", loc.file_name(), loc.line()) << std::endl;
+inline void
+netdev_debug(std::format_string<Args...> fmt, Args &&...args,
+             const std::source_location loc = std::source_location::current()) {
+  std::cout << std::format(fmt, std::forward<Args>(args)...)
+            << std::format(" - {}:{}\n", loc.file_name(), loc.line())
+            << std::endl;
 }
 
-class Network_Device
-{
+class Network_Device {
 public:
-    uint32_t addr;
-    size_t addr_len;
-    uint8_t hwaddr[6]; // MAC Address
-    uint32_t mtu;
+  uint32_t addr;
+  size_t addr_len;
+  uint8_t hwaddr[6]; // MAC Address
+  uint32_t mtu;
 
-    Network_Device(const std::string &_addr, const std::string &_hwaddr, uint32_t _mtu);
+  Network_Device(const std::string &_addr, const std::string &_hwaddr,
+                 uint32_t _mtu);
 };
 
 inline Network_Device *loopback = nullptr;

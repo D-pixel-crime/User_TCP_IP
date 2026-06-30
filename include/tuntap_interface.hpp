@@ -1,18 +1,18 @@
 #pragma once
+#include <cstdint>
 #include <string>
 
-class TUNTAP_Interface
-{
+class TUNTAP_Interface {
 public:
-    inline static std::string tap_addr = "10.0.0.5";
-    inline static std::string tap_route = "10.0.0.0/24";
-    static bool initialised;
-    static int tap_fd;
-    static std::string dev;
+  inline static std::string tap_addr = "10.0.0.5";
+  inline static std::string tap_route = "10.0.0.0/24";
+  inline static bool initialised;
+  inline static int tap_fd;
+  inline static std::string dev;
 
-    TUNTAP_Interface();
+  TUNTAP_Interface();
 
-    int tap_alloc();
+  int tap_alloc();
 };
 
 void tuntap_interface_init();
